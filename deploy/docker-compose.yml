@@ -1,7 +1,21 @@
 version: '3.9'
 
+# ──────────────────────────────────────────────────────────────
+# AulaMatch — Docker Compose (entorno de desarrollo local)
+# Servicios: db + backend
+#
+# Uso:
+#   cp .env.example .env   # completar valores reales
+#   docker compose up --build
+#
+# Para cambiar puertos si 5432 o 3001 están en uso:
+#   Editar HOST_DB_PORT y HOST_BACKEND_PORT en .env
+# ──────────────────────────────────────────────────────────────
+
 services:
-  postgres:
+
+  # ─── Base de datos ───────────────────────────────────────────
+  db:
     image: postgres:16-alpine
     container_name: aulamatch_db
     restart: unless-stopped
@@ -10,17 +24,47 @@ services:
       POSTGRES_USER:     ${POSTGRES_USER:-aulamatch_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${HOST_DB_PORT:-5432}:5432"
     volumes:
-      # Persiste los datos entre reinicios del contenedor
       - postgres_data:/var/lib/postgresql/data
-      # Ejecuta automáticamente los scripts de inicialización al primer arranque
       - ./init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aulamatch_user} -d ${POSTGRES_DB:-aulamatch}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+
+  # ─── Backend API ──────────────────────────────────────────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: dev            # usa la etapa dev (nodemon) para desarrollo
+    container_name: aulamatch_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # espera a que Postgres esté listo
+    ports:
+      - "${HOST_BACKEND_PORT:-3001}:3001"
+    environment:
+      NODE_ENV:    development
+      PORT:        3001
+      # Conexión a la BD — usa el nombre de servicio "db" como host dentro de la red Docker
+      DB_HOST:     db
+      DB_PORT:     5432
+      DB_NAME:     ${POSTGRES_DB:-aulamatch}
+      DB_USER:     ${POSTGRES_USER:-aulamatch_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aulamatch_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-aulamatch}
+      JWT_SECRET:      ${JWT_SECRET}
+      JWT_EXPIRES_IN:  ${JWT_EXPIRES_IN:-24h}
+    volumes:
+      # Monta el código fuente para hot-reload con nodemon
+      - ../backend:/app
+      # Excluye node_modules del contenedor para no pisarlos con los del host
+      - /app/node_modules
 
 volumes:
   postgres_data:
