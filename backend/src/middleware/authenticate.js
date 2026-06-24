@@ -1,32 +1,33 @@
-/**
- * middleware/authenticate.js
- * Verifica la firma y vigencia del JWT en el header Authorization.
- *
- * Flujo esperado:
- *   1. Extraer token de: Authorization: Bearer <token>
- *   2. Verificar con jwt.verify(token, process.env.JWT_SECRET)
- *   3. Si válido → adjuntar payload a req.user y llamar next()
- *   4. Si inválido/expirado → responder 401 Unauthorized
- *
- * Payload esperado (sección 10.4):
- *   { sub, nombre, rol, unidadAcademicaId, iat, exp }
- *
- * TODO: instalar dependencia → npm install jsonwebtoken
- */
 'use strict';
 
-// const jwt = require('jsonwebtoken');
-// 
-// module.exports = (req, res, next) => {
-//   const authHeader = req.headers['authorization'];
-//   if (!authHeader?.startsWith('Bearer ')) {
-//     return res.status(401).json({ error: 'Token no proporcionado' });
-//   }
-//   const token = authHeader.slice(7);
-//   try {
-//     req.user = jwt.verify(token, process.env.JWT_SECRET);
-//     next();
-//   } catch {
-//     res.status(401).json({ error: 'Token inválido o expirado' });
-//   }
-// };
+const jwt = require('jsonwebtoken');
+
+/**
+ * Middleware de autenticación JWT.
+ *
+ * Extrae el token de: Authorization: Bearer <token>
+ * Si es válido, adjunta el payload decodificado a req.user y llama a next().
+ * Si es inválido o está ausente, responde 401.
+ *
+ * Payload esperado (doc fuente, sección 10.4):
+ * { sub, nombre, rol, unidadAcademicaId, iat, exp }
+ */
+module.exports = function authenticate(req, res, next) {
+  const authHeader = req.headers['authorization'];
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Autenticación requerida: token no proporcionado' });
+  }
+
+  const token = authHeader.slice(7);
+
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch (err) {
+    const mensaje = err.name === 'TokenExpiredError'
+      ? 'Token expirado'
+      : 'Token inválido';
+    return res.status(401).json({ error: mensaje });
+  }
+};

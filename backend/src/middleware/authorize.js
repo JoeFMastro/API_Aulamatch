@@ -1,22 +1,28 @@
-/**
- * middleware/authorize.js
- * Valida que req.user.rol esté en la lista de roles permitidos.
- *
- * Roles del sistema (sección 10.4): COORDINADOR | ADMINISTRATIVO
- *
- * IMPORTANTE — filtro automático por UA:
- *   Si req.user.rol === 'ADMINISTRATIVO', las queries de service
- *   deben aplicar WHERE unidad_academica_id = req.user.unidadAcademicaId
- *   automáticamente. Este middleware NO lo hace; es responsabilidad
- *   de cada service leer req.user.
- *
- * Uso: authorize(['COORDINADOR', 'ADMINISTRATIVO'])
- */
 'use strict';
 
-// module.exports = (rolesPermitidos) => (req, res, next) => {
-//   if (!rolesPermitidos.includes(req.user?.rol)) {
-//     return res.status(403).json({ error: 'Acceso denegado: rol insuficiente' });
-//   }
-//   next();
-// };
+/**
+ * Middleware de autorización por rol.
+ *
+ * Roles del sistema (doc fuente, sección 10.4):
+ *   COORDINADOR   → acceso total
+ *   ADMINISTRATIVO → acceso operativo limitado a su propia UA
+ *
+ * Uso en rutas:
+ *   router.get('/ruta', authenticate, authorize(['COORDINADOR']), handler)
+ *   router.get('/ruta', authenticate, authorize(['COORDINADOR', 'ADMINISTRATIVO']), handler)
+ *
+ * Nota: el filtro automático por unidadAcademicaId para ADMINISTRATIVO
+ * NO se aplica aquí — es responsabilidad de cada service leer req.user.
+ *
+ * @param {string[]} rolesPermitidos
+ */
+module.exports = function authorize(rolesPermitidos) {
+  return (req, res, next) => {
+    if (!req.user || !rolesPermitidos.includes(req.user.rol)) {
+      return res.status(403).json({
+        error: `Acceso denegado. Se requiere uno de los roles: ${rolesPermitidos.join(', ')}`,
+      });
+    }
+    next();
+  };
+};

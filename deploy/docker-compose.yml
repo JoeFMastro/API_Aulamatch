@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aulamatch_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-aulamatch}
+      POSTGRES_USER:     ${POSTGRES_USER:-aulamatch_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persiste los datos entre reinicios del contenedor
+      - postgres_data:/var/lib/postgresql/data
+      # Ejecuta automáticamente los scripts de inicialización al primer arranque
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aulamatch_user} -d ${POSTGRES_DB:-aulamatch}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
