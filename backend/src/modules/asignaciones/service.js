@@ -390,7 +390,7 @@ async function ejecutarAsignacionAutomatica(anio, cuatrimestre) {
            WHERE a.comision_id = co.id
              AND a.estado = 'ASIGNADA'
         )
-      ORDER BY co.inscriptos DESC`,   -- Paso 2: mayor cupo primero
+      ORDER BY co.inscriptos DESC -- Paso 2: mayor cupo primero`,
     [anioNum, cuatriNum]
   );
 

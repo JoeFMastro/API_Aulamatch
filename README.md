@@ -93,8 +93,34 @@ Si la conexión con la base de datos se pierde o no está configurada correctame
 {"status":"error","db":"disconnected"}
 ```
 
+## Pruebas de Integración (Testing)
+
+El backend cuenta con una suite completa de pruebas de integración que verifican el correcto funcionamiento de los módulos críticos (`auth`, `asignaciones` y `conflictos`) utilizando una base de datos PostgreSQL real (`aulamatch_test`).
+
+### 1. Configurar Entorno de Pruebas
+
+Asegúrate de que el contenedor de la base de datos (`aulamatch_db`) esté corriendo. Luego, crea el archivo de configuración para las pruebas:
+
+```bash
+cd backend
+cp .env.test.example .env.test
+```
+
+Edita `.env.test` si necesitas ajustar alguna credencial (por defecto se conecta a `localhost:5432` usando el usuario y contraseña del entorno local).
+
+### 2. Ejecutar la Suite de Pruebas
+
+Para inicializar la base de datos de pruebas (creando la base `aulamatch_test` y aplicando los scripts SQL si no existen) y ejecutar todos los tests:
+
+```bash
+npm run test
+```
+
+Las pruebas se ejecutan de manera secuencial (`--runInBand`) para garantizar el correcto aislamiento entre escenarios de prueba y evitar colisiones en la base de datos.
+
 ---
 
 ## Documentación de diseño
 
 El modelo de clases, esquema SQL y endpoints están definidos en `Actividad4_Joel_Mastroiaco_Completo.pdf` y resumidos en [docs/diseño-original.md](file:///home/joel/Documentos/cursos_UTN/curso%20de%20IA/proyectos/API_Aulamatch/docs/dise%C3%B1o-original.md).
+
