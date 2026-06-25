@@ -6,7 +6,13 @@ version: '3.9'
 #
 # Uso:
 #   cp .env.example .env   # completar valores reales
-#   docker compose up --build
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# Variables de entorno: todas provistas por env_file desde ../.env.
+# REGLA: no usar ${VAR} en environment: para variables definidas en
+# .env — environment: tiene prioridad sobre env_file y la interpolación
+# ${VAR} se resuelve antes de que env_file se aplique, buscando en el
+# directorio del compose (deploy/) donde no existe .env → queda vacía.
 #
 # Para cambiar puertos si 5432 o 3001 están en uso:
 #   Editar HOST_DB_PORT y HOST_BACKEND_PORT en .env
@@ -19,10 +25,9 @@ services:
     image: postgres:16-alpine
     container_name: aulamatch_db
     restart: unless-stopped
-    environment:
-      POSTGRES_DB:       ${POSTGRES_DB:-aulamatch}
-      POSTGRES_USER:     ${POSTGRES_USER:-aulamatch_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # env_file provee: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+    env_file:
+      - ../.env
     ports:
       - "${HOST_DB_PORT:-5432}:5432"
     volumes:
@@ -48,18 +53,18 @@ services:
         condition: service_healthy   # espera a que Postgres esté listo
     ports:
       - "${HOST_BACKEND_PORT:-3001}:3001"
+    # env_file provee: POSTGRES_PASSWORD, JWT_SECRET, JWT_EXPIRES_IN,
+    # DB_NAME, DB_USER, DB_PASSWORD, DATABASE_URL, PORT, etc.
+    env_file:
+      - ../.env
     environment:
-      NODE_ENV:    development
-      PORT:        3001
-      # Conexión a la BD — usa el nombre de servicio "db" como host dentro de la red Docker
-      DB_HOST:     db
-      DB_PORT:     5432
-      DB_NAME:     ${POSTGRES_DB:-aulamatch}
-      DB_USER:     ${POSTGRES_USER:-aulamatch_user}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-aulamatch_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-aulamatch}
-      JWT_SECRET:      ${JWT_SECRET}
-      JWT_EXPIRES_IN:  ${JWT_EXPIRES_IN:-24h}
+      # Solo se declaran aquí valores que difieren del .env local
+      # o que son exclusivos del contexto de red Docker:
+      NODE_ENV: development
+      # DB_HOST apunta al nombre del servicio Docker "db", no a "localhost".
+      # Sobreescribe intencionalmente el DB_HOST=db del .env (que ya es correcto,
+      # pero se deja explícito para dejar claro el override estructural Docker).
+      DB_HOST: db
     volumes:
       # Monta el código fuente para hot-reload con nodemon
       - ../backend:/app

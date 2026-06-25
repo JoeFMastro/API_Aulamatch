@@ -6,12 +6,27 @@
  *
  * Convenciones de formato de error:
  *   { error: string, details?: any }
+ *
+ * Política de logging:
+ *   - Errores 4xx (flujo normal de negocio: auth fallida, recurso no encontrado,
+ *     conflictos de validación, etc.) → console.warn, solo el mensaje.
+ *     Son situaciones esperadas; no indican un problema del servidor.
+ *   - Errores 5xx o sin status (excepciones no controladas) → console.error
+ *     con el stack trace completo, para facilitar el debugging.
  */
 // eslint-disable-next-line no-unused-vars
 module.exports = function errorHandler(err, req, res, next) {
-  console.error(`[error] ${req.method} ${req.path} →`, err.message);
+  const status = err.status ?? 500;
 
-  // Errores de validación lanzados con status 400
+  if (status >= 500) {
+    // Error inesperado del servidor — loguear con stack completo
+    console.error(`[error] ${req.method} ${req.path} → ${err.message}`, err.stack ?? '');
+  } else {
+    // Error de negocio esperado (4xx) — loguear liviano sin stack
+    console.warn(`[warn]  ${req.method} ${req.path} → ${status} ${err.message}`);
+  }
+
+  // Errores de validación lanzados con status 4xx
   if (err.status) {
     return res.status(err.status).json({
       error:   err.message,

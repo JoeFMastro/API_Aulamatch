@@ -45,14 +45,18 @@ sudo usermod -aG docker $USER
 
 ## 4. Paso 3: Levantar el Entorno de Desarrollo
 
+> [!IMPORTANT]
+> **Todos los comandos `docker compose` deben ejecutarse desde la raíz del repositorio** (donde está el archivo `.env`).
+> Ejecutarlos desde un subdirectorio como `backend/` provocará un error de ruta al no encontrar `deploy/docker-compose.yml`.
+
 Para construir y levantar los contenedores de la base de datos y el backend con **hot-reload** (recarga en caliente ante cambios de código mediante `nodemon`):
 
 ```bash
-sudo docker compose -f deploy/docker-compose.yml --env-file .env up --build
+docker compose -f deploy/docker-compose.yml up --build
 ```
 
 ### ¿Qué hace este comando internamente?
-1. **Carga del archivo `.env`**: `--env-file .env` le indica a Compose que cargue las variables del archivo raíz.
+1. **Carga del archivo `.env`**: El `docker-compose.yml` declara `env_file: - ../.env` en cada servicio, por lo que las variables se cargan automáticamente desde la raíz — no es necesario pasar `--env-file` manualmente.
 2. **Construcción del Backend**: Compila la imagen local del backend utilizando la etapa `dev` del `Dockerfile`.
 3. **Inicio de base de datos**: Levanta PostgreSQL, aplica el script de inicialización (`deploy/init-db/01_schema.sql`) y realiza pruebas de salud.
 4. **Sincronización del Backend**: Espera que la base de datos esté saludable (`service_healthy`) y arranca el backend.
@@ -110,5 +114,8 @@ Si estás visualizando los logs en tiempo real, puedes detener la ejecución pre
 Para remover los contenedores y liberar las redes virtuales creadas sin perder tus datos de base de datos (los datos se conservan en un volumen persistente llamado `deploy_postgres_data`):
 
 ```bash
-sudo docker compose -f deploy/docker-compose.yml --env-file .env down
+docker compose -f deploy/docker-compose.yml down
 ```
+
+> [!CAUTION]
+> Este comando también debe ejecutarse **desde la raíz del repositorio**. Si lo corrés desde `backend/` u otro subdirectorio, Docker Compose no encontrará el archivo `deploy/docker-compose.yml` y fallará con un error de ruta.

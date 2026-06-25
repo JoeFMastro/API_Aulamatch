@@ -67,10 +67,20 @@ Edita el archivo `.env` según tus necesidades locales. Asegúrate de configurar
 
 ### 2. Levantar el Entorno Local
 
-Para construir e iniciar los servicios de la base de datos (`db`) y el backend (`backend` con nodemon y hot-reload):
+> [!IMPORTANT]
+> Ejecutá estos comandos **desde la raíz del repositorio** (el directorio que contiene `.env` y la carpeta `deploy/`).
+> Cambiar a un subdirectorio como `backend/` antes de correrlos rompe la resolución de rutas.
+
+Para construir e iniciar los servicios (las variables de entorno se cargan automáticamente desde `.env`):
 
 ```bash
 docker compose -f deploy/docker-compose.yml up --build
+```
+
+Para detener y eliminar los contenedores:
+
+```bash
+docker compose -f deploy/docker-compose.yml down
 ```
 
 El servicio `backend` espera a que el servicio `db` pase el control de salud (healthcheck) antes de arrancar, garantizando una conexión segura desde el principio.
