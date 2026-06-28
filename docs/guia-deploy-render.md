@@ -43,6 +43,7 @@ Estas variables deben cargarse manualmente en el dashboard del Web Service en Re
 | `DATABASE_URL` | `postgresql://aulamatch_user:abc123@dpg-xxxxx-a.oregon-postgres.render.com/aulamatch` | Render → tu Postgres DB → **Internal Database URL** (ver Paso 2) |
 | `JWT_SECRET` | `s3cr3t0_muy_largo_de_al_menos_32_caracteres_aqui` | Generarlo manualmente (ver más abajo) |
 | `JWT_EXPIRES_IN` | `24h` | Libre elección (ej: `1h`, `7d`, `24h`) |
+| `ALLOWED_ORIGINS` | `https://aulamatch-frontend.onrender.com` | Origen de confianza del frontend (opcional, lista separada por comas) |
 | `NODE_ENV` | `production` | Hardcodear este valor |
 | `PORT` | `3001` | Render lo sobreescribe con su propio valor, pero declararlo evita confusiones |
 
@@ -101,7 +102,7 @@ Copiar el output completo (96 caracteres hex) y pegarlo como valor de `JWT_SECRE
    - **Region:** la misma que elegiste para la base de datos (importante para la latencia)
    - **Runtime:** `Docker`
    - **Dockerfile Path:** `backend/Dockerfile`
-   - **Docker Build Context:** `.` (raíz del repositorio)
+   - **Docker Build Context:** `backend` (directorio del backend)
    - **Docker Build Target:** `prod`
 4. En **Advanced** (o al editar después):
    - Desactivar cualquier opción de "auto-deploy from docker-compose" si aparece.
@@ -114,11 +115,12 @@ Copiar el output completo (96 caracteres hex) y pegarlo como valor de `JWT_SECRE
 2. Agregar las variables una por una según la tabla del comienzo de esta guía:
 
    ```
-   DATABASE_URL   = <Internal Database URL del Paso 2>
-   JWT_SECRET     = <cadena generada con el comando de la sección anterior>
-   JWT_EXPIRES_IN = 24h
-   NODE_ENV       = production
-   PORT           = 3001
+    DATABASE_URL    = <Internal Database URL del Paso 2>
+    JWT_SECRET      = <cadena generada con el comando de la sección anterior>
+    JWT_EXPIRES_IN  = 24h
+    ALLOWED_ORIGINS = https://tu-frontend.onrender.com
+    NODE_ENV        = production
+    PORT            = 3001
    ```
 
 3. Guardar los cambios.
@@ -227,7 +229,7 @@ Render detecta automáticamente los pushes a la rama configurada y hace un nuevo
 | `[config/env] Variable de entorno de base de datos faltante` | `DATABASE_URL` no definida | Agregar `DATABASE_URL` copiada del panel de la Postgres DB |
 | Error 502 / timeout en la primera petición | Cold start del plan Free | Esperar 30-60 segundos y reintentar |
 | `ECONNREFUSED` en los logs del backend | Servicio levantado antes de que la DB estuviera lista | Render reintenta automáticamente; si persiste, verificar que `DATABASE_URL` apunta a la Internal URL correcta |
-| Build falla con `no such file or directory: Dockerfile` | Dockerfile Path incorrecto en Render | Verificar que el path sea `backend/Dockerfile` y el Build Context sea `.` |
+| Build falla con `no such file or directory: Dockerfile` | Dockerfile Path incorrecto en Render | Verificar que el path sea `backend/Dockerfile` y el Build Context sea `backend` |
 
 ---
 

@@ -134,3 +134,5 @@ Las pruebas se ejecutan de manera secuencial (`--runInBand`) para garantizar el 
 
 El modelo de clases, esquema SQL y endpoints están definidos en `Actividad4_Joel_Mastroiaco_Completo.pdf` y resumidos en [docs/diseño-original.md](file:///home/joel/Documentos/cursos_UTN/curso%20de%20IA/proyectos/API_Aulamatch/docs/dise%C3%B1o-original.md).
 
+Las desviaciones justificadas y decisiones de diseño tomadas durante el desarrollo se detallan en [docs/decisiones-diseno.md](file:///home/joel/Documentos/cursos_UTN/curso%20de%20IA/proyectos/API_Aulamatch/docs/decisiones-diseno.md).
+

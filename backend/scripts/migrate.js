@@ -53,7 +53,10 @@ async function migrate() {
 
   const forceMode = process.env.MIGRATE_FORCE === 'true';
 
-  const client = new Client({ connectionString: databaseUrl });
+  const client = new Client({ 
+    connectionString: databaseUrl,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
 
   try {
     await client.connect();
@@ -96,7 +99,7 @@ async function migrate() {
     }
 
     // ── 3. Ejecutar archivos SQL en orden ──────────────────────────────────
-    const sqlDir = path.resolve(__dirname, '../../deploy/init-db');
+    const sqlDir = path.resolve(__dirname, '../sql');
 
     for (const file of SQL_FILES) {
       const filePath = path.join(sqlDir, file);

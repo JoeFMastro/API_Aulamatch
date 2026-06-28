@@ -57,7 +57,7 @@ async function runSetup() {
   try {
     await testClient.connect();
     
-    const sqlDir = path.resolve(__dirname, '../../deploy/init-db');
+    const sqlDir = path.resolve(__dirname, '../sql');
     const files = [
       '01_schema.sql',
       '02_usuarios.sql',
