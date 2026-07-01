@@ -204,7 +204,7 @@ tipo_clase       → TEORICA | PRACTICA | TEORICO_PRACTICA
 **Algoritmo**: HS256  
 **Roles**: `COORDINADOR` (acceso total) | `ADMINISTRATIVO` (limitado a su UA)
 
-**Payload del token**:
+**Payload del token (ejemplo)**:
 ```json
 {
   "sub": 42,
@@ -215,9 +215,16 @@ tipo_clase       → TEORICA | PRACTICA | TEORICO_PRACTICA
   "exp": 1720028800
 }
 ```
+> **Nota de implementación sobre roles:** Si bien el token de ejemplo para un `COORDINADOR` incluye el claim `unidadAcademicaId`, este campo es ignorado por los middlewares de autorización y los servicios de filtrado de datos. El scope restrictivo por unidad académica se aplica exclusivamente cuando el rol es `ADMINISTRATIVO`.
 
 **Filtro automático por UA**: Si `rol === 'ADMINISTRATIVO'`, todos los services
 deben aplicar `WHERE unidad_academica_id = req.user.unidadAcademicaId`.
+
+---
+
+### Nota de Seguridad sobre el Secreto del Token (JWT_SECRET)
+
+Dado que se utiliza el algoritmo simétrico HS256 para firmar los tokens, la seguridad del sistema depende íntegramente del resguardo y confidencialidad de la variable `JWT_SECRET`. Como mitigación frente a posibles filtraciones, además del límite de expiración de 24 horas (u 8 horas recomendado en producción), se aconseja implementar una política de **rotación periódica del secreto**. Debe considerarse que la rotación invalidará de forma inmediata todos los tokens activos emitidos con anterioridad, obligando a los usuarios a iniciar sesión nuevamente, lo cual resulta plenamente aceptable dado el flujo de uso diurno e institucional del sistema.
 
 ---
 
@@ -285,6 +292,8 @@ FIN FUNCIÓN
 > heredado del paso 3. Si se requiere un desempate explícito, debe especificarse como
 > requerimiento adicional.
 
+> **Ciclo de vida del estado PENDIENTE:** El motor automático crea asignaciones directamente en estado `ASIGNADA` porque solo procesa y persiste aquellas comisiones que logran encontrar un aula compatible y disponible en su franja horaria. El estado `PENDIENTE` del ciclo de vida se reserva para comisiones recién dadas de alta en el sistema (por ejemplo, mediante `POST /api/comisiones`) que aún no han sido procesadas por el motor automático ni por una asignación manual asistida. Al persistirse en la base de datos sin un aula física confirmada, la asignación nace con estado `PENDIENTE` de manera predeterminada.
+
 ---
 
 ## 7. Detección de Conflictos (Sección 10.5)
@@ -299,6 +308,8 @@ FIN FUNCIÓN
 **Verificación 1 — Superposición horaria**:
 ```
 Para cada banda de la comisión:
+  // Se excluyen asignaciones en estado CONFLICTO para garantizar la idempotencia
+  // del proceso de detección y evitar la auto-detección redundante entre sí.
   Si existe otra Asignacion con mismo aula_id y estado ≠ CONFLICTO
   Y misma banda con solapamiento de horario → estado = 'CONFLICTO'
 ```

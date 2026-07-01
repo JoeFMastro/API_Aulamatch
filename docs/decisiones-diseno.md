@@ -56,3 +56,35 @@ vistazo cuántas comisiones permanecen sin resolver sin abandonar la vista centr
 | `PENDIENTE` | Amarillo | `#CA8A04` | Sin aula asignada; columna "Aula" vacía |
 | `ASIGNADA` | Verde | `#16A34A` | Aula confirmada; todas las celdas completas |
 | `CONFLICTO` | Rojo | `#DC2626` | Superposición horaria o cupo excedido detectado |
+
+---
+
+## 3. Evolución del Estilo Visual: Del Concepto Dark Mode al Wireframe Claro (Sección 2 vs Sección 3)
+
+### Inconsistencia detectada
+
+El prompt de generación en Midjourney (Sección 2) propone una estética con predominancia de tonos oscuros ("dark mode" y sidebar azul marino oscuro), mientras que los wireframes funcionales de Figma AI (Sección 3) y la interfaz definitiva se diseñaron en modo claro, utilizando un fondo gris muy claro (`#F7F8FC`) y tablas con filas de fondo blanco.
+
+### Decisión adoptada
+
+La transición del concepto inicial en modo oscuro hacia una interfaz definitiva en modo claro fue una decisión consciente tomada durante el proceso de iteración del diseño por las siguientes razones:
+1. **Contexto de uso y fatiga visual:** Dado que el sistema está destinado a coordinadores y administrativos universitarios que realizan jornadas de carga de datos y planificación académica extensas, una interfaz con fondo predominantemente claro reduce significativamente el cansancio ocular y mejora la legibilidad de grandes bloques de texto y tablas densas.
+2. **Consistencia institucional:** El modo claro, apoyado en acentos azules (`#1E40AF`) y bordes limpios, transmite mayor formalidad y se alinea con la estética habitual de los portales de autogestión y software de administración académica de la universidad.
+3. **Iteración conceptual:** El mockup conceptual de Midjourney cumplió la función de establecer la paleta de colores de acento y la distribución espacial (ej. sidebar persistente), mientras que Figma AI materializó la funcionalidad en un esquema apto para producción diaria.
+
+---
+
+## 4. Mecanismo de Notificación de Conflictos Stateless (Sección 10.6 vs Sección 8.2 / 10.5)
+
+### Inconsistencia detectada
+
+La tabla de trazabilidad original (Sección 10.6) lista la entidad `(tabla notificaciones)` para dar soporte a la funcionalidad de "Notificación ante conflicto". Sin embargo, dicha tabla no existe en el esquema relacional canónico (Sección 8.2) ni en el diagrama de clases de dominio (Sección 5.1).
+
+### Decisión adoptada
+
+Para el MVP se optó por un **mecanismo de notificación stateless basado en la entidad Asignación**, eliminando la necesidad de persistir un registro físico de notificaciones en una tabla separada. El flujo funciona de la siguiente manera:
+1. **Detección de conflictos:** Cuando se inserta o modifica una asignación, los triggers y el servicio correspondiente analizan la colisión horaria y de cupo. Si detectan un solapamiento, actualizan el atributo `estado = 'CONFLICTO'` en la misma tupla de la tabla `asignacion`.
+2. **Notificación en el cliente:** El frontend realiza polling activo (consultas periódicas) al endpoint `GET /api/conflictos/metricas`. Este endpoint cuenta cuántas filas en `asignacion` están en estado `'CONFLICTO'`.
+3. **Interfaz fluida:** Si el número de conflictos es superior a cero, el sistema dibuja un badge de alerta (rojo) en la barra de navegación del Coordinador para notificarle en tiempo real. 
+
+Esta solución mantiene la base de datos simple, evita el crecimiento desmedido de tablas de log/notificación, y es consistente con la arquitectura REST stateless descrita en la Sección 6 y 10.5.
