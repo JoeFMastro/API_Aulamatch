@@ -6,13 +6,14 @@
  */
 'use strict';
 const { Router } = require('express');
-// const ctrl = require('./controller');
-// const authenticate = require('../../middlewares/authenticate');
-// const authorize    = require('../../middlewares/authorize');
+const ctrl = require('./controller');
+const authenticate = require('../../middlewares/authenticate');
+const authorize    = require('../../middlewares/authorize');
 
 const router = Router();
 
-// router.get('/asignaciones',   authenticate, authorize(['COORDINADOR','ADMINISTRATIVO']), ctrl.reporteAsignaciones);
-// router.get('/disponibilidad', authenticate, authorize(['COORDINADOR']),                  ctrl.disponibilidad);
+router.get('/asignaciones',   authenticate, authorize(['COORDINADOR', 'ADMINISTRATIVO']), ctrl.reporteAsignaciones);
+router.get('/disponibilidad', authenticate, authorize(['COORDINADOR']),                  ctrl.disponibilidad);
 
 module.exports = router;
+

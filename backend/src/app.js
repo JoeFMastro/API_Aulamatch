@@ -50,8 +50,7 @@ app.use('/api', require('./modules/academico/routes'));
 app.use('/api/asignaciones', require('./modules/asignaciones/routes'));
 app.use('/api/conflictos',   require('./modules/conflictos/routes'));
 
-// Módulos pendientes de implementación:
-// app.use('/api/reportes',     require('./modules/reportes/routes'));
+app.use('/api/reportes',     require('./modules/reportes/routes'));
 
 // ── Error handler (siempre al final) ─────────────────────────
 app.use(errorHandler);
