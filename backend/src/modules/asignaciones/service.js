@@ -338,12 +338,16 @@ async function aulasCompatiblesParaComision(comisionId) {
 /**
  * Ejecuta el motor de asignación automática para un período.
  *
- * Sigue exactamente el flujo del pseudocódigo validado:
+ * Sigue exactamente el flujo del pseudocódigo validado (v2):
  *   1. Obtener comisiones sin asignación activa (ASIGNADA) del período
  *   2. Ordenar por inscriptos descendente (cupo mayor = prioridad mayor)
- *   3. Para cada comisión: buscar aulas compatibles
- *   4. Elegir la primera disponible (ya ordenada: preferida → alternativa)
- *   5. Crear registro en asignacion con estado='ASIGNADA', es_manual=false
+ *   3. Para cada comisión: buscar aulas candidatas por tipo y capacidad
+ *   4. Ordenar candidatas: edificio preferido primero, luego por capacidad
+ *      sobrante ascendente (aula.capacidad - comision.inscriptos).
+ *      El ORDER BY SQL garantiza que, tras filtrar superposición horaria,
+ *      la primera aula disponible sea la de menor desperdicio de capacidad.
+ *   5. Elegir la primera candidata sin superposición (= menor capacidad sobrante)
+ *   6. Crear registro en asignacion con estado='ASIGNADA', es_manual=false
  *
  * Idempotencia: las comisiones que ya tienen asignación ASIGNADA
  * se EXCLUYEN del proceso, evitando duplicados en ejecuciones repetidas.
@@ -416,7 +420,14 @@ async function ejecutarAsignacionAutomatica(anio, cuatrimestre) {
 
     const tiposParam = tiposAceptados.map((_, i) => `$${i + 2}::tipo_aula`).join(', ');
 
-    // ── Buscar candidatas: tipo + capacidad + orden edificio preferido ──
+    // ── Buscar candidatas: tipo + capacidad, ordenadas por edificio preferido
+    //    y luego por capacidad sobrante ascendente (menor desperdicio primero).
+    //    Equivale al paso 4 del pseudocódigo v2:
+    //      aulasDisponibles ← ordenarPorCampoAscendente(
+    //          aulasDisponibles, clave = aula.capacidad - comision.inscriptos
+    //      )
+    //    El ORDER BY se aplica ANTES del filtro de superposición, de modo que
+    //    la primera candidata que pase el filtro sea automáticamente la óptima.
     const { rows: candidatas } = await db.query(
       `SELECT a.id, a.numero, a.capacidad, a.tipo, a.edificio_id
          FROM aula a
@@ -424,7 +435,7 @@ async function ejecutarAsignacionAutomatica(anio, cuatrimestre) {
           AND a.capacidad >= $${tiposAceptados.length + 2}
         ORDER BY
           CASE WHEN a.edificio_id = $1 THEN 0 ELSE 1 END ASC,
-          a.capacidad ASC`,
+          (a.capacidad - $${tiposAceptados.length + 2}) ASC`,
       [
         com.edificio_preferencia_id ?? -1,
         ...tiposAceptados,
@@ -433,12 +444,14 @@ async function ejecutarAsignacionAutomatica(anio, cuatrimestre) {
     );
 
     // ── Filtrar por disponibilidad horaria ──
+    // La primera candidata sin superposición es la de menor capacidad sobrante
+    // dentro de su grupo de preferencia (edificio preferido > alternativas).
     let aulaElegida = null;
     for (const aula of candidatas) {
       const superposicion = await existeSuperposicion(aula.id, bandas);
       if (!superposicion) {
         aulaElegida = aula;
-        break; // primera aula disponible (ya priorizada por edificio)
+        break;
       }
     }
 
