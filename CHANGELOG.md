@@ -8,6 +8,94 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.6] — 2026-07-01 · Módulo Reportes (exportación de asignaciones y disponibilidad de aulas)
+
+### Agregado
+
+- **`backend/src/modules/reportes/service.js`** — Lógica de consultas de solo lectura transversal.
+  - `obtenerAsignaciones({ anio, cuatrimestre, unidadAcademicaId?, estado? })` — Exporta el estado
+    completo de asignaciones del período cruzando 8 tablas: `asignacion`, `comision`, `materia`,
+    `unidad_academica`, `docente`, `aula`, `edificio` y la relación M:N `carrera_materia`.
+    - **Decisión documentada (JOIN cartesiano M:N):** La relación `carrera_materia` y `banda_horaria`
+      no se pueden unir con JOINs directos al mismo nivel del SELECT principal porque se genera
+      un producto cartesiano (3 carreras × 2 bandas = 6 filas duplicadas por comisión). Se resolvió
+      usando dos **subconsultas correlacionadas independientes**:
+      - `(SELECT array_agg(DISTINCT c2.nombre ...) FROM carrera_materia cm2 ...)` para las carreras.
+      - `(SELECT json_agg(jsonb_build_object(...) ORDER BY ...) FROM banda_horaria bh2 ...)` para las bandas.
+    - Las bandas horarias se formatean a string legible: `"Lun 08:00-12:00 / Mié 10:00-12:00"`.
+  - `obtenerDisponibilidad({ anio, cuatrimestre, edificioId?, dia? })` — Calcula ocupación de aulas
+    agrupadas por edificio.
+    - Barrido de horario operativo estándar: **lunes a sábado, 08:00 a 22:00** (14 horas/día × 6 días
+      = **84 horas semanales posibles** por aula).
+    - Para cada aula: calcula `ocupacion_pct` (horas_ocupadas / 84 × 100, redondeado a 2 decimales),
+      lista `bloques_ocupados` con el código de la comisión que ocupa cada franja, y calcula
+      `bloques_libres` barriendo la línea de tiempo del día.
+    - **Filtro por `dia`:** restringe los bloques mostrados (ocupados y libres) al día indicado,
+      pero **no excluye aulas** que no tengan clases ese día — aparecen con `bloques_ocupados: []`
+      y el rango libre completo. El `ocupacion_pct` siempre refleja la semana completa.
+    - **Estado de asignaciones:** excluye explícitamente estados `CANCELADA` / `RECHAZADA` para
+      que no inflen el porcentaje de ocupación.
+
+- **`backend/src/modules/reportes/controller.js`** — Handlers HTTP.
+  - `reporteAsignaciones` — Parsea `anio` y `cuatrimestre` (ambos obligatorios, 400 si faltan).
+    - Aplica filtro automático de `unidadAcademicaId` del JWT si el usuario es `ADMINISTRATIVO`
+      (mismo patrón que los módulos `asignaciones` y `conflictos`).
+    - Si `?formato=csv`: serializa la respuesta como CSV nativo con `Array.join(',')` sin librerías
+      externas. Agrega **BOM UTF-8** (`\uFEFF`) al inicio del buffer para compatibilidad con
+      Microsoft Excel en Windows (lectura correcta de tildes y caracteres especiales en español).
+      Cabeceras HTTP: `Content-Type: text/csv; charset=utf-8` y `Content-Disposition: attachment; filename="asignaciones_{anio}_{cuatrimestre}.csv"`.
+    - Si `?formato=json` o sin parámetro: responde JSON estándar.
+    - **Carreras en CSV:** las múltiples carreras de una misma materia (relación M:N) se unen
+      con `";"` dentro de una sola celda (sin duplicar filas).
+  - `disponibilidad` — Valida el parámetro opcional `dia` contra la lista de días válidos (400
+    si se envía un valor fuera del enum `DiaSemana`).
+
+- **`backend/src/modules/reportes/routes.js`** — Router montado en `/api/reportes`.
+  - `GET /asignaciones` → `authenticate` + `authorize(['COORDINADOR', 'ADMINISTRATIVO'])`.
+  - `GET /disponibilidad` → `authenticate` + `authorize(['COORDINADOR'])` (exclusivo por diseño).
+
+- **`backend/tests/reportes.test.js`** — Suite de 8 tests de integración.
+  - Usa el mismo patrón `resetDbAndSeed` + `supertest` que las demás suites.
+  - Cubre: JSON 200, CSV 200 (Content-Type + BOM + headers), 401 sin token, 400 sin parámetros,
+    scope de UA para ADMINISTRATIVO, 403 para ADMINISTRATIVO en disponibilidad, filtro por día
+    sin excluir aulas sin ocupación ese día.
+
+### Modificado
+
+- **`backend/src/app.js`** — Activado `app.use('/api/reportes', require('./modules/reportes/routes'))`.
+
+### Decisiones técnicas registradas
+
+| Decisión | Elección | Justificación |
+|---|---|---|
+| JOIN M:N en query de asignaciones | Subconsultas correlacionadas en lugar de JOINs directos | JOINs de `carrera_materia` y `banda_horaria` al mismo nivel del SELECT generan producto cartesiano. Subconsultas independientes resuelven el problema sin duplicar filas ni agregar librerías ORM. |
+| Generación de CSV | String nativo (`Array.join` + `\r\n`) | La especificación indica "sin librerías nuevas de generación de CSV". Lógica simple de 20 líneas; la función `escapeCSV` maneja comas, comillas y saltos de línea estándar RFC 4180. |
+| BOM UTF-8 en CSV | `\uFEFF` al inicio del buffer | Microsoft Excel en Windows no detecta automáticamente el encoding UTF-8; el BOM lo fuerza. Sin él, los caracteres como tildes y `ñ` aparecen corruptos. |
+| Carreras en CSV | Separadas por `";"` en una sola celda | Duplicar filas por carrera rompe la semántica del reporte (una fila = una asignación). El `;` es compatible con Excel que usa `,` como separador decimal. |
+| Ocupación semanal base | 84 horas (14h/día × 6 días) | Estándar operativo documentado: lunes-sábado 08:00-22:00. Constante fija; no se recalcula dinámicamente por días hábiles. |
+| Filtro por `dia` en disponibilidad | Restringe bloques mostrados, no las aulas listadas | El propósito del filtro es "¿qué pasa ese día?", no "¿qué aulas tienen clase ese día?". Excluir aulas ocultaría espacio disponible. |
+| Scope ADMINISTRATIVO en asignaciones | Mismo patrón de todos los módulos: override automático del `unidadAcademicaId` del JWT | Coherencia con `asignaciones`, `academico` y `conflictos`; el cliente no puede ver ni filtrar datos de otra UA. |
+
+### Resultado de npm test tras esta versión
+
+```
+Test Suites: 4 passed, 4 total
+Tests:       23 passed, 23 total   (15 anteriores + 8 nuevos)
+Time:        4.08 s
+```
+
+### Endpoints disponibles tras esta versión
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| *(todos los anteriores)* | | | |
+| `GET` | `/api/reportes/asignaciones` | C, A | Estado de asignaciones del período (JSON / CSV) |
+| `GET` | `/api/reportes/disponibilidad` | C | Ocupación de aulas agrupada por edificio |
+
+> C = COORDINADOR · A = ADMINISTRATIVO
+
+---
+
 ## [v1.5] — 2026-06-24 · Módulo Conflictos (detección automática + panel)
 
 ### Agregado
@@ -383,10 +471,10 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 | `modules/academico` | Listados de UAs, carreras, materias, docentes, comisiones | ✅ Completado en v1.3 |
 | `modules/asignaciones` | Motor automático + CRUD manual | ✅ Completado en v1.4 |
 | `modules/conflictos` | Detección y gestión de conflictos de solapamiento | ✅ Completado en v1.5 |
-| `modules/reportes` | Reportes de ocupación y disponibilidad | 🔲 Pendiente |
+| `modules/reportes` | Reportes de ocupación y disponibilidad | ✅ Completado en v1.6 |
+| Tests | Suite de tests de integración (auth, aulas, asignaciones, conflictos, reportes) | ✅ Completado — 23 tests pasando |
 | Registro de usuarios | Endpoint `POST /api/auth/registro` | 🔲 Pendiente (baja prioridad) |
 | Refresh tokens | Renovación de JWT sin re-login | 🔲 Pendiente (baja prioridad) |
-| Tests | Suite de tests unitarios e integración | 🔲 Pendiente |
 | nginx | Configuración de proxy reverso para producción | 🔲 Pendiente |
 
 ---
