@@ -221,20 +221,69 @@ deben aplicar `WHERE unidad_academica_id = req.user.unidadAcademicaId`.
 
 ---
 
-## 6. Algoritmo de Asignación Automática (Sección 10.3)
+## 6. Algoritmo de Asignación Automática (Sección 10.3 — v2)
 
-> **Estado**: pendiente de implementación (etapa posterior)
+> **Estado**: implementado en `backend/src/modules/asignaciones/service.js`
 
-1. Obtener comisiones sin aula del período `(anio, cuatrimestre)`
-2. Ordenar por `cupo` descendente (greedy)
-3. Para cada comisión:
-   - Inferir tipo de aula requerido desde `modalidad` y `tipo_clase`
-   - Filtrar aulas por tipo y capacidad ≥ inscriptos
-   - Priorizar edificio de preferencia de la UA
-   - Verificar superposición horaria (`existeSuperposicion`)
-   - Si hay aula disponible → crear `asignacion` con `estado='ASIGNADA'`, `es_manual=false`
-   - Si no → registrar como fallo (`SIN_AULA_DISPONIBLE`)
-4. Retornar `{ asignadas, pendientes, resumen: { total, asignadas, fallidas } }`
+```
+FUNCIÓN asignarAutomaticamente(anio, cuatrimestre):
+    comisionesSinAula ← obtenerComisiones(anio, cuatrimestre, estado=SIN_ASIGNACION)
+
+    // 1. Ordenar por demanda: primero las de mayor cupo (más difíciles de ubicar)
+    comisionesSinAula ← ordenarPorCupoDescendente(comisionesSinAula)
+
+    asignacionesPropuestas ← []
+    asignacionesFallidas   ← []
+
+    PARA CADA comision EN comisionesSinAula:
+        bandasHorarias ← comision.bandasHorarias
+        cupoRequerido  ← comision.inscriptos
+        tipoClaseReq   ← inferirTipoAula(comision.modalidad, bandasHorarias.tipoClase)
+        edificioPref   ← comision.materia.unidadAcademica.edificioPreferencia
+
+        // 2. Buscar aulas candidatas por tipo y cupo
+        aulasCandidatas ← buscarAulas(tipo >= tipoClaseReq, capacidad >= cupoRequerido)
+
+        // 3. Priorizar edificio preferido de la UA
+        aulasPreferidas   ← filtrarPorEdificio(aulasCandidatas, edificioPref)
+        aulasAlternativas ← aulasCandidatas - aulasPreferidas
+        aulasCandidatas   ← aulasPreferidas + aulasAlternativas
+
+        // 4. Filtrar por disponibilidad horaria (sin superposición)
+        aulasDisponibles ← []
+        PARA CADA aula EN aulasCandidatas:
+            SI NO existeSuperposicion(aula, bandasHorarias):
+                aulasDisponibles.agregar(aula)
+
+        // 5. Ordenar por capacidad sobrante ascendente (menor desperdicio primero)
+        //    Capacidad sobrante = aula.capacidad - comision.inscriptos
+        aulasDisponibles ← ordenarPorCampoAscendente(
+            aulasDisponibles,
+            clave = aula.capacidad - comision.inscriptos
+        )
+
+        // 6. Seleccionar la mejor aula disponible (menor capacidad sobrante)
+        SI aulasDisponibles NO está vacío:
+            aulaElegida ← aulasDisponibles[0]
+            asignacionesPropuestas.agregar(
+                crearAsignacion(comision.id, aulaElegida.id, estado="ASIGNADA",
+                               esManual=false, fechaAsignacion=AHORA())
+            )
+        SINO:
+            asignacionesFallidas.agregar({comision, motivo="SIN_AULA_DISPONIBLE"})
+
+    guardarEnBD(asignacionesPropuestas)
+    RETORNAR { asignadas, pendientes, resumen: {total, asignadas, fallidas} }
+FIN FUNCIÓN
+```
+
+> **Nota (corrección v2):** Se agregó el paso 5 de ordenamiento por capacidad sobrante
+> ascendente (`aula.capacidad − comision.inscriptos`) antes de la selección de
+> `aulasDisponibles[0]`, eliminando la contradicción entre el comentario original y la lógica
+> ejecutada. En caso de empate exacto de capacidad sobrante, el criterio de desempate queda
+> delegado al orden de inserción previo (edificio preferido primero, alternativas después),
+> heredado del paso 3. Si se requiere un desempate explícito, debe especificarse como
+> requerimiento adicional.
 
 ---
 
