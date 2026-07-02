@@ -75,13 +75,13 @@ async function reporteAsignaciones(req, res, next) {
         'fecha_asignacion'
       ];
 
-      const csvRows = [headers.join(',')];
+      const csvRows = [headers.join(';')];
 
       for (const row of asignaciones) {
         const line = [
           escapeCSV(row.comision_codigo),
           escapeCSV(row.materia_nombre),
-          escapeCSV(Array.isArray(row.carreras) ? row.carreras.join(';') : ''),
+          escapeCSV(Array.isArray(row.carreras) ? row.carreras.join(' | ') : ''),
           escapeCSV(row.unidad_academica_nombre),
           escapeCSV(row.docente_apellido),
           escapeCSV(row.docente_nombre),
@@ -96,7 +96,7 @@ async function reporteAsignaciones(req, res, next) {
           escapeCSV(row.es_manual),
           escapeCSV(row.fecha_asignacion)
         ];
-        csvRows.push(line.join(','));
+        csvRows.push(line.join(';'));
       }
 
       const csvContent = csvRows.join('\r\n');
