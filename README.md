@@ -1,138 +1,323 @@
 # AulaMatch API
 
-API REST para la gestión y asignación de espacios académicos (aulas, laboratorios y aulas virtuales) en entornos universitarios.
+> API REST para la gestión y asignación automática de espacios académicos en entornos universitarios.
 
-## Tecnologías
+![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Jest](https://img.shields.io/badge/tests-23%20passing-brightgreen?logo=jest&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-- **Runtime**: Node.js (v22+)
-- **Framework**: Express.js
-- **Base de datos**: PostgreSQL (v16)
-- **Infraestructura**: Docker / Docker Compose
+---
 
-## Estado
+## ¿Qué es AulaMatch?
 
-🚧 En desarrollo — Scaffolding inicial y configuración del entorno de desarrollo local.
+AulaMatch resuelve un problema concreto de las universidades: asignar aulas a comisiones de manera eficiente, evitando superposiciones horarias y respetando restricciones de capacidad, tipo de aula y preferencias de edificio de cada unidad académica.
 
-## Estructura del proyecto
+El sistema permite a un **Coordinador** ejecutar una asignación automática masiva al inicio de cada cuatrimestre, gestionar manualmente los casos especiales, detectar y resolver conflictos de solapamiento en tiempo real, y exportar reportes de ocupación en formato JSON o CSV.
+
+Fue desarrollado como proyecto final de la materia **Herramientas de IA aplicadas al Diseño** (UNSAM, 2026), utilizando asistencia de IA de forma documentada y trazable a lo largo de todo el proceso de construcción.
+
+---
+
+## Stack tecnológico
+
+| Tecnología | Versión | Rol |
+|---|---|---|
+| Node.js | 22 | Runtime |
+| Express | 5 | Framework HTTP |
+| PostgreSQL | 16 | Base de datos relacional |
+| Docker + Docker Compose | v2 | Entorno de desarrollo local |
+| Jest + Supertest | — | Tests de integración |
+| bcrypt | — | Hashing de contraseñas |
+| jsonwebtoken | — | Autenticación JWT |
+
+---
+
+## Funcionalidades implementadas
+
+| Módulo | Descripción | Estado |
+|---|---|---|
+| **auth** | Login con JWT, logout stateless, endpoint `/me`. Roles `COORDINADOR` y `ADMINISTRATIVO` con scopes diferenciados. | ✅ Completo |
+| **aulas** | CRUD completo de Edificios y Aulas (tipo, capacidad, ubicación). | ✅ Completo |
+| **académico** | Listados de Unidades Académicas, Carreras, Materias (con relación M:N a Carreras), Docentes y Comisiones. Gestión de excepciones en tiempo real. | ✅ Completo |
+| **asignaciones** | Motor de asignación automática (prioriza cupo, tipo de aula, disponibilidad horaria y edificio preferido de la UA), asignación manual asistida, consulta de aulas compatibles y reasignación. | ✅ Completo |
+| **conflictos** | Detección automática de superposición horaria y cupo excedido. Notificaciones persistidas en tabla propia. Métricas para panel de control. Resolución manual con re-verificación automática. | ✅ Completo |
+| **reportes** | Exportación de asignaciones por período en JSON y CSV (compatible con Excel, con BOM UTF-8). Reporte de disponibilidad de aulas por edificio y franja horaria con cálculo de ocupación porcentual. | ✅ Completo |
+| **Tests** | Suite de integración (Jest + Supertest) contra PostgreSQL real: 23 tests cubriendo auth, asignaciones, conflictos y reportes. | ✅ 23 pasando |
+| **Deploy en Render** | Infraestructura y scripts listos (Dockerfile prod, script de migración). El despliegue efectivo es el próximo paso. | 🔲 Pendiente |
+| **Integración de IA interna** | Sugerida como extensión futura por el evaluador académico. Fuera del alcance del MVP. | 🔭 Visión futura |
+
+---
+
+## Arquitectura
+
+El backend sigue una **arquitectura de monolito modular en 3 capas**:
+
+```
+┌─────────────────────────────────────────┐
+│  Presentación (routes + controllers)    │  ← Recibe HTTP, valida entrada, delega
+├─────────────────────────────────────────┤
+│  Lógica de Negocio (services)           │  ← Motor de asignación, detección de conflictos, reglas de rol
+├─────────────────────────────────────────┤
+│  Persistencia (config/db.js + SQL puro) │  ← Pool pg, queries parametrizadas, sin ORM
+└─────────────────────────────────────────┘
+```
+
+Cada módulo (`auth`, `aulas`, `academico`, `asignaciones`, `conflictos`, `reportes`) es autónomo: tiene su propio `routes.js`, `controller.js` y `service.js`. La comunicación entre módulos es explícita (importación directa del service correspondiente), sin bus de eventos ni capa de abstracción adicional.
+
+Para las decisiones de diseño relevantes y las desviaciones justificadas respecto al modelo original, ver [`docs/decisiones-diseno.md`](docs/decisiones-diseno.md).
+
+---
+
+## Estructura del repositorio
 
 ```
 API_Aulamatch/
-├── backend/          # Código fuente de la API REST
+├── backend/
 │   ├── src/
-│   │   ├── config/   # Configuración (DB, env, etc.)
-│   │   ├── controllers/
-│   │   ├── middlewares/ # Middlewares globales y de ruta (autenticación, errores, etc.)
-│   │   ├── models/
-│   │   ├── modules/  # Módulos del monolito modular (auth, aulas, asignaciones, etc.)
-│   │   ├── routes/
-│   │   └── utils/
-│   ├── tests/
-│   ├── Dockerfile    # Dockerfile multi-stage para desarrollo/producción
+│   │   ├── config/          # Pool de conexiones a PostgreSQL y validación de env vars al inicio
+│   │   ├── middlewares/     # authenticate (JWT), authorize (roles), errorHandler (global)
+│   │   └── modules/
+│   │       ├── auth/        # Login, logout, /me
+│   │       ├── aulas/       # CRUD de edificios y aulas
+│   │       ├── academico/   # UAs, carreras, materias, docentes, comisiones
+│   │       ├── asignaciones/# Motor automático + CRUD manual + aulas compatibles
+│   │       ├── conflictos/  # Detección, notificaciones, métricas, resolución
+│   │       └── reportes/    # Exportación JSON/CSV, disponibilidad de aulas
+│   ├── sql/                 # Scripts de migración para deploy externo (npm run migrate)
+│   ├── tests/               # Suites de integración (Jest + Supertest)
+│   ├── Dockerfile           # Multi-stage: target dev (nodemon) y prod (node)
 │   └── package.json
-├── deploy/           # Archivos Docker y configuración de despliegue
-│   ├── docker-compose.yml # Composición de servicios locales (db + backend)
-│   ├── init-db/      # Scripts SQL de inicialización de la base de datos
-│   └── nginx/        # Configuración del proxy reverso (pendiente producción)
-├── README.md
-└── .env.example      # Plantilla de variables de entorno
+├── deploy/
+│   ├── docker-compose.yml   # Servicios locales: db (postgres:16) + backend con hot-reload
+│   └── init-db/             # Scripts SQL de inicialización: 01_schema, 02_usuarios, 03_notificaciones
+├── docs/
+│   ├── diseño-original.md         # Modelo de dominio, diagrama de clases, especificación de endpoints
+│   ├── decisiones-diseno.md       # Desviaciones justificadas respecto al diseño original
+│   ├── guia-desarrollo-local.md   # Guía detallada de setup local
+│   ├── guia-deploy-render.md      # Guía paso a paso para deploy en Render
+│   ├── auditoria-2026-06-28.md    # Auditoría de production-readiness pre-deploy
+│   └── Actividad4_Joel_Mastroiaco_Completo.pdf  # Documento académico completo (diseño + decisiones)
+├── CHANGELOG.md             # Historial de versiones con decisiones técnicas por iteración
+├── .env.example             # Plantilla de variables de entorno (copiar a .env)
+└── README.md
 ```
 
-## Guía de Desarrollo Local
+---
 
-El entorno local está diseñado para ser reproducible y levantarse con un solo comando mediante Docker Compose.
+## Requisitos previos
 
-### Requisitos previos
+- **Node.js** v22 o superior (solo necesario si corrés los tests fuera de Docker)
+- **Docker** instalado y corriendo
+- **Docker Compose** v2 (`docker compose` sin guion medio)
 
-- Docker instalado.
-- Docker Compose instalado.
+---
 
-### 1. Configuración de Variables de Entorno
+## Setup local paso a paso
 
-Antes de iniciar los servicios, clona el archivo de configuración `.env` desde la plantilla `.env.example` en la raíz del proyecto:
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/JoeFMastro/API_Aulamatch.git
+cd API_Aulamatch
+```
+
+### 2. Configurar variables de entorno
 
 ```bash
 cp .env.example .env
 ```
 
-Edita el archivo `.env` según tus necesidades locales. Asegúrate de configurar contraseñas seguras para la base de datos y un secreto para JWT.
+Abrí el archivo `.env` y completá como mínimo:
 
-> [!TIP]
-> **Casos de borde (Puertos ocupados)**:
-> Si los puertos `5432` o `3001` ya están siendo utilizados en tu máquina por otras aplicaciones (como una base de datos local), puedes redefinir los puertos expuestos editando las siguientes variables en tu archivo `.env`:
-> ```ini
-> HOST_DB_PORT=5433
-> HOST_BACKEND_PORT=3002
-> ```
-> De esta forma, Docker redireccionará los puertos automáticamente sin interferir con tus servicios locales.
+- `POSTGRES_PASSWORD` — contraseña de la base de datos
+- `DATABASE_URL` — string de conexión completo (ajustar la contraseña elegida)
+- `JWT_SECRET` — cadena aleatoria larga (mínimo 32 caracteres)
 
-### 2. Levantar el Entorno Local
+> **Nota sobre puertos:** Si los puertos `5432` (PostgreSQL) o `3001` (backend) ya están en uso en tu máquina, podés cambiar `HOST_DB_PORT` y `HOST_BACKEND_PORT` en el `.env` para que Docker los exponga en puertos alternativos, sin modificar ningún otro archivo.
 
-> [!IMPORTANT]
-> Ejecutá estos comandos **desde la raíz del repositorio** (el directorio que contiene `.env` y la carpeta `deploy/`).
-> Cambiar a un subdirectorio como `backend/` antes de correrlos rompe la resolución de rutas.
+### 3. Levantar los servicios
 
-Para construir e iniciar los servicios (las variables de entorno se cargan automáticamente desde `.env`):
+> Ejecutar desde la **raíz del repositorio** (donde está el `.env`).
 
 ```bash
 docker compose -f deploy/docker-compose.yml up --build
 ```
 
-Para detener y eliminar los contenedores:
+El servicio `backend` espera automáticamente a que la base de datos supere el healthcheck antes de arrancar. Los scripts SQL de `deploy/init-db/` se ejecutan en orden al crear el contenedor por primera vez.
 
-```bash
-docker compose -f deploy/docker-compose.yml down
-```
-
-El servicio `backend` espera a que el servicio `db` pase el control de salud (healthcheck) antes de arrancar, garantizando una conexión segura desde el principio.
-
-### 3. Verificar el Funcionamiento (Health Check)
-
-Puedes validar que el servidor está corriendo y se ha conectado exitosamente a la base de datos realizando una consulta HTTP al endpoint de salud pública:
+### 4. Verificar que todo funciona
 
 ```bash
 curl -i http://localhost:3001/api/health
 ```
 
-**Respuesta exitosa (HTTP 200)**:
+Respuesta esperada (`HTTP 200`):
+
 ```json
 {"status":"ok","db":"connected"}
 ```
 
-Si la conexión con la base de datos se pierde o no está configurada correctamente, el endpoint responderá con código `503 Service Unavailable`:
-```json
-{"status":"error","db":"disconnected"}
-```
+### 5. Credenciales del seed de desarrollo
 
-## Pruebas de Integración (Testing)
+El script de inicialización crea dos usuarios de prueba:
 
-El backend cuenta con una suite completa de pruebas de integración que verifican el correcto funcionamiento de los módulos críticos (`auth`, `asignaciones` y `conflictos`) utilizando una base de datos PostgreSQL real (`aulamatch_test`).
+| Email | Contraseña | Rol |
+|---|---|---|
+| `coordinador@aulamatch.edu` | `Coord1234!` | `COORDINADOR` |
+| `admin@aulamatch.edu` | `Admin1234!` | `ADMINISTRATIVO` (UA: FRBA) |
 
-### 1. Configurar Entorno de Pruebas
-
-Asegúrate de que el contenedor de la base de datos (`aulamatch_db`) esté corriendo. Luego, crea el archivo de configuración para las pruebas:
+### Detener los servicios
 
 ```bash
-cd backend
-cp .env.test.example .env.test
+docker compose -f deploy/docker-compose.yml down
 ```
-
-Edita `.env.test` si necesitas ajustar alguna credencial (por defecto se conecta a `localhost:5432` usando el usuario y contraseña del entorno local).
-
-### 2. Ejecutar la Suite de Pruebas
-
-Para inicializar la base de datos de pruebas (creando la base `aulamatch_test` y aplicando los scripts SQL si no existen) y ejecutar todos los tests:
-
-```bash
-npm run test
-```
-
-Las pruebas se ejecutan de manera secuencial (`--runInBand`) para garantizar el correcto aislamiento entre escenarios de prueba y evitar colisiones en la base de datos.
 
 ---
 
-## Documentación de diseño
+## Correr los tests
 
-El modelo de clases, esquema SQL y endpoints están definidos en `Actividad4_Joel_Mastroiaco_Completo.pdf` y resumidos en [docs/diseño-original.md](file:///home/joel/Documentos/cursos_UTN/curso%20de%20IA/proyectos/API_Aulamatch/docs/dise%C3%B1o-original.md).
+Los tests se ejecutan dentro del contenedor del backend contra una base de datos real (`aulamatch_test`). **El contenedor de la base de datos debe estar corriendo** antes de ejecutar los tests.
 
-Las desviaciones justificadas y decisiones de diseño tomadas durante el desarrollo se detallan en [docs/decisiones-diseno.md](file:///home/joel/Documentos/cursos_UTN/curso%20de%20IA/proyectos/API_Aulamatch/docs/decisiones-diseno.md).
+```bash
+cd backend
+npm test
+```
 
+Resultado esperado:
+
+```
+Test Suites: 4 passed, 4 total
+Tests:       23 passed, 23 total
+Time:        ~4s
+```
+
+> Los tests corren en modo secuencial (`--runInBand`) para garantizar el aislamiento entre escenarios y evitar colisiones en la base de datos de pruebas.
+
+---
+
+## Variables de entorno
+
+| Variable | Requerida | Descripción | Ejemplo |
+|---|---|---|---|
+| `NODE_ENV` | Opcional | Entorno de ejecución. Activa SSL en producción. | `development` |
+| `PORT` | Opcional | Puerto interno del servidor Express. | `3001` |
+| `HOST_DB_PORT` | Opcional | Puerto del host donde se expone PostgreSQL. | `5432` |
+| `HOST_BACKEND_PORT` | Opcional | Puerto del host donde se expone el backend. | `3001` |
+| `POSTGRES_DB` | ✅ Requerida | Nombre de la base de datos. | `aulamatch` |
+| `POSTGRES_USER` | ✅ Requerida | Usuario de PostgreSQL. | `aulamatch_user` |
+| `POSTGRES_PASSWORD` | ✅ Requerida | Contraseña de PostgreSQL. | `un_password_seguro` |
+| `DATABASE_URL` | ✅ Requerida* | String de conexión completo. | `postgresql://user:pass@db:5432/aulamatch` |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Opcional* | Variables individuales de conexión (fallback si no hay `DATABASE_URL`). | — |
+| `JWT_SECRET` | ✅ Requerida | Clave secreta para firmar los JWT. Mínimo 32 caracteres. | `una_clave_larga_y_aleatoria` |
+| `JWT_EXPIRES_IN` | Opcional | Vigencia del token JWT. | `8h` |
+| `ALLOWED_ORIGINS` | Opcional | Orígenes permitidos por CORS (separados por coma). Si no se define, se permite `*` con advertencia en consola. | `http://localhost:3000` |
+
+> \* Se requiere `DATABASE_URL` **o** el conjunto completo de variables individuales (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`). El sistema valida esto al arrancar y lanza un error descriptivo si falta alguna variable crítica.
+
+---
+
+## Endpoints principales
+
+> La especificación completa (parámetros, cuerpos de request, respuestas y ejemplos) está en [`docs/diseño-original.md`](docs/diseño-original.md).
+> **C** = `COORDINADOR` · **A** = `ADMINISTRATIVO`
+
+### Auth
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| `GET` | `/api/health` | Público | Estado del servidor y conexión a DB |
+| `POST` | `/api/auth/login` | Público | Login con email + contraseña → JWT |
+| `POST` | `/api/auth/logout` | Auth | Cierre de sesión (client-side stateless) |
+| `GET` | `/api/auth/me` | Auth | Datos del usuario del token activo |
+
+### Aulas
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| `GET` | `/api/edificios` | C, A | Lista todos los edificios |
+| `POST` | `/api/edificios` | C | Crear un edificio |
+| `GET` | `/api/edificios/:id/aulas` | C, A | Aulas de un edificio |
+| `POST` | `/api/aulas` | C | Crear un aula |
+| `PATCH` | `/api/aulas/:id` | C | Actualizar datos de un aula |
+
+### Académico
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| `GET` | `/api/unidades-academicas` | C, A | Lista todas las UAs |
+| `GET` | `/api/carreras` | C, A | Lista carreras (filtro opcional por UA) |
+| `GET` | `/api/materias` | C, A | Lista materias con sus carreras (relación M:N) |
+| `GET` | `/api/docentes` | C, A | Lista docentes |
+| `GET` | `/api/comisiones` | C, A | Lista comisiones con filtros múltiples |
+| `POST` | `/api/comisiones` | C, A | Registrar una comisión |
+
+### Asignaciones
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| `GET` | `/api/asignaciones` | C, A | Lista asignaciones con filtros |
+| `POST` | `/api/asignaciones/automatica` | C, A | Ejecutar motor de asignación automática |
+| `POST` | `/api/asignaciones` | C, A | Crear asignación manual |
+| `GET` | `/api/asignaciones/:id/aulas-compatibles` | C, A | Aulas disponibles para una comisión |
+| `PATCH` | `/api/asignaciones/:id` | C, A | Reasignar aula o cambiar estado |
+| `DELETE` | `/api/asignaciones/:id` | C | Eliminar una asignación |
+
+### Conflictos
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| `GET` | `/api/conflictos` | C, A | Lista asignaciones en conflicto con notificaciones |
+| `GET` | `/api/conflictos/metricas` | C, A | Contadores del panel (conflictos activos, pendientes, etc.) |
+| `POST` | `/api/conflictos/detectar` | C | Detección masiva manual sobre el período activo |
+
+### Reportes
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| `GET` | `/api/reportes/asignaciones` | C, A | Estado de asignaciones del período (`?formato=json` o `?formato=csv`) |
+| `GET` | `/api/reportes/disponibilidad` | C | Ocupación de aulas agrupada por edificio (filtro por día opcional) |
+
+---
+
+## Documentación adicional
+
+| Archivo | Contenido |
+|---|---|
+| [`docs/diseño-original.md`](docs/diseño-original.md) | Modelo de dominio completo: diagrama de clases, esquema de tablas, especificación de endpoints y casos de uso. |
+| [`docs/decisiones-diseno.md`](docs/decisiones-diseno.md) | Desviaciones justificadas respecto al modelo original (permisos de roles, representación visual de estados, mecanismo de notificaciones stateless). |
+| [`docs/guia-desarrollo-local.md`](docs/guia-desarrollo-local.md) | Guía extendida de setup local con casos de borde (puertos ocupados, troubleshooting). |
+| [`docs/guia-deploy-render.md`](docs/guia-deploy-render.md) | Instrucciones paso a paso para desplegar en Render (PostgreSQL + Web Service). |
+| [`docs/auditoria-2026-06-28.md`](docs/auditoria-2026-06-28.md) | Auditoría de production-readiness: revisión de CORS, SSL, manejo de errores, secrets y bloqueantes resueltos. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Historial completo de versiones (v1.0 → v1.6) con decisiones técnicas registradas por iteración. |
+| [`docs/Actividad4_Joel_Mastroiaco_Completo.pdf`](docs/Actividad4_Joel_Mastroiaco_Completo.pdf) | Documento académico completo: diseño, wireframes, pseudocódigo, trazabilidad y justificaciones. |
+
+---
+
+## Estado del proyecto
+
+| Componente | Estado |
+|---|---|
+| Scaffolding y entorno Docker | ✅ Completo |
+| Módulo `auth` (JWT, roles) | ✅ Completo |
+| Módulo `aulas` (CRUD edificios y aulas) | ✅ Completo |
+| Módulo `académico` (UAs, carreras, materias, docentes, comisiones) | ✅ Completo |
+| Módulo `asignaciones` (motor automático + manual) | ✅ Completo |
+| Módulo `conflictos` (detección, notificaciones, resolución) | ✅ Completo |
+| Módulo `reportes` (JSON + CSV, disponibilidad) | ✅ Completo |
+| Suite de tests de integración (23 tests) | ✅ Completo |
+| Infraestructura de deploy (Dockerfile prod, script de migración) | ✅ Lista |
+| **Deploy efectivo en Render** | 🔲 Pendiente (próximo paso) |
+| Integración de IA interna en el motor de asignación | 🔭 Visión futura |
+
+---
+
+## Autor y contexto académico
+
+**Joel Mastroiaco**
+Materia: *Herramientas de IA aplicadas al Diseño*
+Institución: Universidad Nacional de San Martín (UNSAM)
+Año: 2026
+
+El proyecto fue desarrollado de forma incremental con asistencia de IA documentada. Cada decisión técnica relevante y desviación del diseño original está registrada en [`docs/decisiones-diseno.md`](docs/decisiones-diseno.md) y en el [`CHANGELOG.md`](CHANGELOG.md), respetando el principio de trazabilidad exigido por la materia.
