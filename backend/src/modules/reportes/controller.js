@@ -16,9 +16,14 @@ const DIAS_VALIDOS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABA
  */
 function escapeCSV(val) {
   if (val === undefined || val === null) return '';
-  if (val instanceof Date) return val.toISOString();
+  
+  if (val instanceof Date) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(val.getDate())}/${pad(val.getMonth() + 1)}/${val.getFullYear()} ${pad(val.getHours())}:${pad(val.getMinutes())}`;
+  }
+
   let str = String(val);
-  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+  if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     str = '"' + str.replace(/"/g, '""') + '"';
   }
   return str;
