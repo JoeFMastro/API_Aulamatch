@@ -215,8 +215,10 @@ async function obtenerDisponibilidad({ anio, cuatrimestre, edificioId, dia }) {
   const { rows: aulas } = await db.query(queryAulas, [edificioId ? Number(edificioId) : null]);
 
   // 2. Obtener todas las asignaciones activas del periodo.
-  // BUG FIX #3: Se excluyen asignaciones con estado CANCELADA o RECHAZADA para que no
-  // inflen el porcentaje de ocupación ni aparezcan como bloques ocupados.
+  // NOTA: el ENUM estado_asignacion solo contiene PENDIENTE, ASIGNADA y CONFLICTO.
+  // No existen los valores CANCELADA ni RECHAZADA, por lo que un NOT IN con esos
+  // valores causa un error de tipo en PostgreSQL. Se usa IN explícito con los
+  // valores válidos que sí queremos incluir en el reporte de ocupación.
   const queryAsignaciones = `
     SELECT
       a.aula_id,
@@ -229,7 +231,7 @@ async function obtenerDisponibilidad({ anio, cuatrimestre, edificioId, dia }) {
     JOIN banda_horaria bh ON bh.comision_id = co.id
     WHERE co.anio = $1
       AND co.cuatrimestre = $2
-      AND a.estado NOT IN ('CANCELADA', 'RECHAZADA')
+      AND a.estado IN ('PENDIENTE', 'ASIGNADA', 'CONFLICTO')
   `;
 
   const { rows: asignaciones } = await db.query(queryAsignaciones, [Number(anio), Number(cuatrimestre)]);
