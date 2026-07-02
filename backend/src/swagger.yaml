@@ -76,6 +76,44 @@ paths:
         '200':
           description: Lista de asignaciones.
 
+  /asignaciones/{id}:
+    patch:
+      summary: Reasignar Aula (Resolver Conflicto)
+      description: Actualiza el aula de una asignación existente. Se usa para resolver conflictos.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID de la asignación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                aula_id:
+                  type: integer
+                  example: 7
+      responses:
+        '200':
+          description: Asignación actualizada.
+    delete:
+      summary: Eliminar Asignación
+      description: Elimina una asignación existente, liberando el aula y dejando la comisión pendiente.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID de la asignación a eliminar
+      responses:
+        '200':
+          description: Asignación eliminada exitosamente.
+
   /asignaciones/automatica:
     post:
       summary: Motor de Asignación Automática
