@@ -192,6 +192,10 @@ INSERT INTO materia (nombre, codigo, unidad_academica_id)
 SELECT 'Ingeniería de Software', 'IS-401', 1
 WHERE NOT EXISTS (SELECT 1 FROM materia WHERE codigo = 'IS-401');
 
+INSERT INTO materia (nombre, codigo, unidad_academica_id)
+SELECT 'Inteligencia Artificial', 'IA-501', 1
+WHERE NOT EXISTS (SELECT 1 FROM materia WHERE codigo = 'IA-501');
+
 
 -- =============================================================
 -- 6. CARRERA_MATERIA (relaciones M:N)
@@ -250,6 +254,11 @@ ON CONFLICT DO NOTHING;
 INSERT INTO carrera_materia (carrera_id, materia_id)
 SELECT c.id, m.id FROM carrera c, materia m
 WHERE c.codigo = 'LAS-FRBA' AND m.codigo = 'IS-401'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO carrera_materia (carrera_id, materia_id)
+SELECT c.id, m.id FROM carrera c, materia m
+WHERE c.codigo = 'IS-FRBA' AND m.codigo = 'IA-501'
 ON CONFLICT DO NOTHING;
 
 
