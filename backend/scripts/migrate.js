@@ -3,24 +3,30 @@
 /**
  * AulaMatch — Script de migración para producción (Render)
  *
- * Aplica en orden los archivos SQL de deploy/init-db/ contra la base
+ * Aplica en orden los archivos SQL de backend/sql/ contra la base
  * de datos apuntada por DATABASE_URL.
  *
- * Uso:
+ * Uso básico:
  *   DATABASE_URL=postgresql://... npm run migrate
+ *
+ * Con seed de demostración (SOLO para entornos de demo/evaluación):
+ *   DATABASE_URL=postgresql://... SEED_DEMO=true npm run migrate
  *
  * Requisitos:
  *   - DATABASE_URL definida en el entorno (Render la provee automáticamente
  *     cuando se vincula una Render Postgres database al Web Service).
  *   - La base de datos debe estar vacía (primera vez) o se debe pasar
- *     --force para re-ejecutar sobre una base existente (DESTRUCTIVO).
+ *     MIGRATE_FORCE=true para re-ejecutar sobre una base existente (DESTRUCTIVO).
  *
  * Comportamiento ante base ya migrada:
  *   Si las tablas principales ya existen, el script aborta con un mensaje
  *   claro en vez de pisar datos silenciosamente (01_schema.sql empieza
  *   con DROP TABLE ... CASCADE, lo que destruiría datos en producción).
+ *   Excepción: si solo se pasa SEED_DEMO=true sin MIGRATE_FORCE=true,
+ *   el script aplica únicamente 04_seed_demo.sql sobre la base existente
+ *   (el seed es idempotente y seguro sobre datos pre-existentes).
  *
- * Para re-ejecutar (base de datos de desarrollo o emergencia):
+ * Para re-ejecutar completamente (entorno de desarrollo o emergencia):
  *   MIGRATE_FORCE=true DATABASE_URL=... npm run migrate
  */
 
@@ -32,14 +38,20 @@ const path = require('path');
 // detectar si la base ya fue migrada.
 const SENTINEL_TABLES = ['aula', 'comision', 'asignacion', 'usuario'];
 
-// Archivos SQL a ejecutar, en orden estricto.
+// Archivos SQL de migración base, en orden estricto.
 const SQL_FILES = [
   '01_schema.sql',
   '02_usuarios.sql',
   '03_notificaciones.sql',
 ];
 
+// Archivos SQL opcionales (solo se incluyen si la variable de entorno correspondiente está definida).
+// SEED_DEMO=true → aplica 04_seed_demo.sql (datos de demostración para evaluación).
+// El seed es idempotente: puede correrse sobre una base con datos sin generar errores ni duplicados.
+const SEED_FILE = '04_seed_demo.sql';
+
 async function migrate() {
+  const seedDemoMode = process.env.SEED_DEMO === 'true';
   // ── 1. Validar DATABASE_URL ──────────────────────────────────────────────
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -51,7 +63,13 @@ async function migrate() {
     process.exit(1);
   }
 
-  const forceMode = process.env.MIGRATE_FORCE === 'true';
+  const forceMode    = process.env.MIGRATE_FORCE === 'true';
+
+  // Modo seed-only: aplicar solo el seed sobre una base ya migrada.
+  // No requiere MIGRATE_FORCE porque el seed es idempotente.
+  if (seedDemoMode && !forceMode) {
+    console.log('[migrate] Modo SEED_DEMO detectado. Se aplicará únicamente 04_seed_demo.sql.');
+  }
 
   const client = new Client({ 
     connectionString: databaseUrl,
@@ -63,7 +81,9 @@ async function migrate() {
     console.log('[migrate] Conectado a la base de datos.');
 
     // ── 2. Detectar si la base ya fue migrada ──────────────────────────────
-    if (!forceMode) {
+    // En modo seed-only (SEED_DEMO=true sin MIGRATE_FORCE) se salta este
+    // guard porque el seed es idempotente y corre sobre datos existentes.
+    if (!forceMode && !seedDemoMode) {
       const existingTables = [];
       for (const table of SENTINEL_TABLES) {
         const res = await client.query(
@@ -98,10 +118,17 @@ async function migrate() {
       );
     }
 
-    // ── 3. Ejecutar archivos SQL en orden ──────────────────────────────────
+    // ── 3. Determinar qué archivos SQL ejecutar ───────────────────────────
     const sqlDir = path.resolve(__dirname, '../sql');
 
-    for (const file of SQL_FILES) {
+    // En modo seed-only (SEED_DEMO=true sin MIGRATE_FORCE), solo se aplica el seed.
+    // En modo normal o force, se aplican las migraciones base.
+    const filesToRun = seedDemoMode && !forceMode
+      ? [SEED_FILE]
+      : [...SQL_FILES, ...(seedDemoMode ? [SEED_FILE] : [])];
+
+    // ── 4. Ejecutar archivos SQL en orden ──────────────────────────────────
+    for (const file of filesToRun) {
       const filePath = path.join(sqlDir, file);
 
       if (!fs.existsSync(filePath)) {
@@ -122,7 +149,13 @@ async function migrate() {
       }
     }
 
-    console.log('\n[migrate] ✅ Todas las migraciones aplicadas correctamente.');
+    const label = seedDemoMode && !forceMode
+      ? '✅ Seed de demostración aplicado correctamente.'
+      : '✅ Todas las migraciones aplicadas correctamente.';
+    console.log(`\n[migrate] ${label}`);
+    if (seedDemoMode) {
+      console.log('[migrate] Verificá los datos con: GET /api/asignaciones?estado=CONFLICTO');
+    }
     console.log('[migrate] Podés verificar el estado con:');
     console.log('[migrate]   GET https://<tu-servicio>.onrender.com/api/health');
 
