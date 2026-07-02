@@ -106,10 +106,13 @@ async function reporteAsignaciones(req, res, next) {
 
       const csvContent = csvRows.join('\r\n');
 
-      // Responder con archivo descargable y soporte UTF-8 (con BOM para Excel)
+      // Responder con archivo descargable y soporte UTF-8 explícito (BOM en bytes para Excel)
+      const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
+      const csvBuffer = Buffer.from(csvContent, 'utf-8');
+      
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="asignaciones_${anio}_${cuatrimestre}.csv"`);
-      return res.send(Buffer.from('\uFEFF' + csvContent, 'utf-8'));
+      return res.send(Buffer.concat([bom, csvBuffer]));
     }
 
     // Por defecto, responder JSON
