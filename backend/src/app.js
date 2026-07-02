@@ -3,6 +3,9 @@
 const express      = require('express');
 const cors         = require('cors');
 const morgan       = require('morgan');
+const path         = require('path');
+const swaggerUi    = require('swagger-ui-express');
+const YAML         = require('yamljs');
 const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
@@ -40,6 +43,10 @@ app.get('/api/health', async (_req, res) => {
     res.status(503).json({ status: 'error', db: 'disconnected' });
   }
 });
+
+// ── Documentación Swagger UI ──────────────────────────────────
+const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // ── Módulos ───────────────────────────────────────────────────
 app.use('/api/auth', require('./modules/auth/routes'));

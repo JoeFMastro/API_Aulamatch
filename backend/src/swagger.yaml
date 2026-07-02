@@ -1,0 +1,166 @@
+openapi: 3.0.0
+info:
+  title: AulaMatch API
+  description: API REST para gestión de espacios académicos y asignación de aulas (UNSAM).
+  version: 1.0.0
+servers:
+  - url: /api
+    description: Base URL de la API
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check público
+      description: Verifica el estado del servidor y la conexión a la base de datos.
+      security: []
+      responses:
+        '200':
+          description: Servicio funcionando.
+
+  /auth/login:
+    post:
+      summary: Login de usuario
+      description: Autentica un usuario y devuelve un token JWT.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: coordinador@aulamatch.edu
+                password:
+                  type: string
+                  example: Coord1234!
+      responses:
+        '200':
+          description: Token generado exitosamente.
+
+  /auth/me:
+    get:
+      summary: Obtener perfil de usuario
+      description: Devuelve el payload decodificado del JWT actual.
+      responses:
+        '200':
+          description: Datos del usuario autenticado.
+
+  /asignaciones:
+    get:
+      summary: Panel de Asignaciones
+      description: Lista las asignaciones y comisiones del período actual, con soporte para filtros.
+      parameters:
+        - in: query
+          name: turno
+          schema:
+            type: string
+          description: Filtrar por turno (MANANA, TARDE, NOCHE)
+        - in: query
+          name: estado
+          schema:
+            type: string
+          description: Filtrar por estado (ASIGNADA, PENDIENTE, CONFLICTO)
+      responses:
+        '200':
+          description: Lista de asignaciones.
+
+  /asignaciones/automatica:
+    post:
+      summary: Motor de Asignación Automática
+      description: Ejecuta el algoritmo de asignación para todas las comisiones sin aula del período indicado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                anio:
+                  type: integer
+                  example: 2025
+                cuatrimestre:
+                  type: integer
+                  example: 1
+      responses:
+        '200':
+          description: Resumen de la asignación automática.
+
+  /conflictos:
+    get:
+      summary: Ver Conflictos Activos
+      description: Lista las asignaciones que se encuentran en estado de CONFLICTO.
+      responses:
+        '200':
+          description: Lista de conflictos.
+
+  /conflictos/metricas:
+    get:
+      summary: Métricas del Panel de Conflictos
+      description: Devuelve los contadores para las cards principales (activos, asignaciones en últimas 24hs).
+      responses:
+        '200':
+          description: Objeto con métricas.
+
+  /reportes/asignaciones:
+    get:
+      summary: Reporte de Asignaciones (JSON / CSV)
+      description: Exporta todas las asignaciones. Soporta formato CSV para descargar en Excel.
+      parameters:
+        - in: query
+          name: anio
+          required: true
+          schema:
+            type: integer
+          example: 2025
+        - in: query
+          name: cuatrimestre
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - in: query
+          name: formato
+          schema:
+            type: string
+          description: Ingresar 'csv' para forzar la descarga del archivo.
+      responses:
+        '200':
+          description: JSON o archivo CSV.
+
+  /reportes/disponibilidad:
+    get:
+      summary: Disponibilidad y Ocupación de Aulas
+      description: Devuelve el porcentaje de ocupación y los bloques libres/ocupados agrupados por edificio.
+      parameters:
+        - in: query
+          name: anio
+          required: true
+          schema:
+            type: integer
+          example: 2025
+        - in: query
+          name: cuatrimestre
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - in: query
+          name: dia
+          schema:
+            type: string
+          description: Filtrar por día específico (ej. LUNES)
+      responses:
+        '200':
+          description: Objeto de disponibilidad por edificio.
