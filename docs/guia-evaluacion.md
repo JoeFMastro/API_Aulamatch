@@ -80,7 +80,7 @@ Dado que este comando es peligroso (borra la base), no se expone en un botón we
 2. **Si sos evaluador técnico y tenés Node.js instalado** junto con el código fuente local de GitHub, podés blanquear todo ejecutando este único comando en tu terminal (en la carpeta backend):
 
 ```bash
-DATABASE_URL="postgresql://aulamatch_user:CambiarPorContrase%C3%B1aSegura123!@dpg-cptttbm1hbls73bs49l0-a.oregon-postgres.render.com/aulamatch_xnsb" SEED_DEMO=true MIGRATE_FORCE=true npm run migrate
+NODE_ENV=production DATABASE_URL='postgresql://aulamatch_user:CambiarPorContrase%C3%B1aSegura123!@dpg-cptttbm1hbls73bs49l0-a.oregon-postgres.render.com/aulamatch_xnsb' SEED_DEMO=true MIGRATE_FORCE=true npm run migrate
 ```
 *(Nota: Estarás afectando directamente la base de datos productiva en la nube).*
 
