@@ -66,6 +66,93 @@ paths:
         '200':
           description: Datos del usuario autenticado.
 
+  /edificios:
+    post:
+      summary: Crear edificio
+      description: Agrega un nuevo edificio.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                  example: "Edificio Nuevo"
+                direccion:
+                  type: string
+                  example: "Av. Falsa 123"
+      responses:
+        '201':
+          description: Edificio creado.
+
+  /aulas:
+    post:
+      summary: Crear aula
+      description: Agrega un aula a un edificio.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                numero:
+                  type: string
+                  example: "N-100"
+                capacidad:
+                  type: integer
+                  example: 50
+                tipo:
+                  type: string
+                  example: "AULA"
+                edificio_id:
+                  type: integer
+                  example: 1
+      responses:
+        '201':
+          description: Aula creada.
+
+  /comisiones:
+    post:
+      summary: Crear comisión
+      description: Agrega una comisión sin aula asignada (lista para el motor).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codigo:
+                  type: string
+                  example: "COM-NUEVA-2025"
+                cupo:
+                  type: integer
+                  example: 40
+                modalidad:
+                  type: string
+                  example: "PRESENCIAL"
+                turno:
+                  type: string
+                  example: "MANANA"
+                cuatrimestre:
+                  type: integer
+                  example: 1
+                anio:
+                  type: integer
+                  example: 2025
+                materia_id:
+                  type: integer
+                  example: 1
+                docente_id:
+                  type: integer
+                  example: 1
+      responses:
+        '201':
+          description: Comisión creada.
+
   /asignaciones:
     get:
       summary: Panel de Asignaciones
