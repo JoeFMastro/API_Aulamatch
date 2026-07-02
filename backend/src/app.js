@@ -44,6 +44,25 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
+// ── Botón de pánico (Reset de BD) ─────────────────────────────
+app.post('/api/health/reset-db', async (req, res) => {
+  try {
+    const fs = require('fs');
+    const db = require('./config/db');
+    const sqlDir = path.join(__dirname, '../sql');
+    const files = ['01_schema.sql', '02_usuarios.sql', '03_notificaciones.sql', '04_seed_demo.sql'];
+    
+    for (const file of files) {
+      const sql = fs.readFileSync(path.join(sqlDir, file), 'utf8');
+      await db.query(sql);
+    }
+    res.json({ message: 'Base de datos formateada y poblada con datos de demostración exitosamente.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Documentación Swagger UI ──────────────────────────────────
 const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

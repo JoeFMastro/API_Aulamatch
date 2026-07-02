@@ -27,6 +27,15 @@ paths:
         '200':
           description: Servicio funcionando.
 
+  /health/reset-db:
+    post:
+      summary: 💣 Botón de Pánico (Reset DB)
+      description: Borra toda la base de datos y la vuelve a poblar con el seed de demostración limpio. Ideal para evaluadores que quieren volver al estado inicial de las pruebas.
+      security: []
+      responses:
+        '200':
+          description: Base de datos formateada exitosamente.
+
   /auth/login:
     post:
       summary: Login de usuario
