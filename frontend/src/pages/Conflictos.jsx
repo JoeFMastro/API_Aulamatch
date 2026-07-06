@@ -63,8 +63,8 @@ export default function Conflictos() {
 
   function tipoConflicto(c) {
     const comision = c.comision || c
-    const aula = c.aula
-    if (aula && comision.inscriptos > aula.capacidad) return 'CUPO_EXCEDIDO'
+    const aulaCapacidad = c.aula_capacidad || c.aula?.capacidad
+    if (aulaCapacidad && (c.inscriptos ?? comision.inscriptos) > aulaCapacidad) return 'CUPO_EXCEDIDO'
     if (c.motivo) return c.motivo
     return 'SUPERPOSICION'
   }
@@ -182,25 +182,25 @@ export default function Conflictos() {
                               : '🕐 Superposición'}
                           </span>
                         </td>
-                        <td className="td-code">{comision.codigo || `COM-${comision.id}`}</td>
-                        <td>{comision.materia?.nombre || '—'}</td>
+                        <td className="td-code">{c.comision_codigo || comision.codigo || `COM-${c.comision_id || comision.id}`}</td>
+                        <td>{c.materia_nombre || comision.materia?.nombre || '—'}</td>
                         <td className="td-muted">
-                          {comision.docente
+                          {c.docente_nombre || (comision.docente
                             ? `${comision.docente.apellido}, ${comision.docente.nombre}`
-                            : '—'}
+                            : '—')}
                         </td>
                         <td style={{ fontWeight: 500 }}>
-                          {aula ? aula.numero : '—'}
+                          {c.aula_numero || (aula ? aula.numero : '—')}
                         </td>
                         <td>
-                          <span style={{ fontWeight: 600 }}>{comision.inscriptos ?? '—'}</span>
-                          <span className="td-muted"> / {aula?.capacidad ?? '?'}</span>
-                          {aula && comision.inscriptos > aula.capacidad && (
+                          <span style={{ fontWeight: 600 }}>{c.inscriptos ?? comision.inscriptos ?? '—'}</span>
+                          <span className="td-muted"> / {c.aula_capacidad ?? aula?.capacidad ?? '?'}</span>
+                          {(c.aula_capacidad || aula?.capacidad) && (c.inscriptos ?? comision.inscriptos) > (c.aula_capacidad ?? aula?.capacidad) && (
                             <span
                               className="badge badge-conflicto"
                               style={{ marginLeft: '6px', fontSize: '10px' }}
                             >
-                              +{comision.inscriptos - aula.capacidad}
+                              +{(c.inscriptos ?? comision.inscriptos) - (c.aula_capacidad ?? aula.capacidad)}
                             </span>
                           )}
                         </td>
@@ -236,15 +236,15 @@ export default function Conflictos() {
                   Conflicto #{selected.id}
                 </div>
                 <div style={{ fontSize: '13px' }}>
-                  <strong>{(selected.comision || selected).codigo}</strong>
+                  <strong>{selected.comision_codigo || (selected.comision || selected).codigo}</strong>
                 </div>
                 <div className="td-muted">
-                  {(selected.comision || selected).materia?.nombre}
+                  {selected.materia_nombre || (selected.comision || selected).materia?.nombre}
                 </div>
-                {selected.aula && (
+                {(selected.aula_numero || selected.aula) && (
                   <div className="td-muted" style={{ marginTop: '4px' }}>
-                    Aula actual: <strong>{selected.aula.numero}</strong>
-                    {' '}(cap. {selected.aula.capacidad})
+                    Aula actual: <strong>{selected.aula_numero || selected.aula.numero}</strong>
+                    {' '}(cap. {selected.aula_capacidad || selected.aula.capacidad})
                   </div>
                 )}
               </div>

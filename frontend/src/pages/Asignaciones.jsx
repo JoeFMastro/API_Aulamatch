@@ -309,11 +309,11 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
   const [saving, setSaving] = useState(false)
 
   const comision = a.comision || a
-  const aula = a.aula || null
+  const aula = a.aula || a
   const bandas = comision.bandas_horarias || comision.bandasHorarias || []
   const carreras = comision.materia?.carreras || []
 
-  const horario = bandas.length > 0
+  const horario = a.horario ? a.horario : bandas.length > 0
     ? bandas.map(b => `${b.dia?.slice(0, 2)} ${b.hora_inicio?.slice(0, 5)}–${b.hora_fin?.slice(0, 5)}`).join(', ')
     : '—'
 
@@ -333,10 +333,10 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
 
   return (
     <tr>
-      <td className="td-code">{comision.codigo || `COM-${comision.id}`}</td>
+      <td className="td-code">{a.comision_codigo || comision.codigo || `COM-${a.comision_id || a.id}`}</td>
       <td>
-        <div style={{ fontWeight: 500 }}>{comision.materia?.nombre || '—'}</div>
-        <div className="td-muted">{comision.materia?.codigo}</div>
+        <div style={{ fontWeight: 500 }}>{a.materia_nombre || comision.materia?.nombre || '—'}</div>
+        <div className="td-muted">{a.materia_codigo || comision.materia?.codigo}</div>
       </td>
       <td>
         <div className="chips-cell">
@@ -347,16 +347,16 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
         </div>
       </td>
       <td>
-        {comision.docente
+        {a.docente_nombre || (comision.docente
           ? `${comision.docente.apellido}, ${comision.docente.nombre}`
-          : '—'}
+          : '—')}
       </td>
       <td>
-        <span style={{ fontWeight: 600 }}>{comision.inscriptos ?? '—'}</span>
-        <span className="td-muted"> / {comision.cupo}</span>
+        <span style={{ fontWeight: 600 }}>{a.inscriptos ?? comision.inscriptos ?? '—'}</span>
+        <span className="td-muted"> / {a.cupo ?? comision.cupo}</span>
       </td>
-      <td className="td-muted">{comision.modalidad}</td>
-      <td className="td-muted">{comision.turno}</td>
+      <td className="td-muted">{a.modalidad ?? comision.modalidad}</td>
+      <td className="td-muted">{a.turno ?? comision.turno}</td>
       <td>
         {editMode ? (
           <div className="flex items-center gap-8">
@@ -375,13 +375,13 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
           </div>
         ) : (
           <div>
-            {aula ? (
+            {a.aula_numero || aula.numero ? (
               <span
                 style={{ cursor: 'pointer', fontWeight: 500 }}
-                onClick={() => { setAulaId(aula.id); setEditMode(true) }}
+                onClick={() => { setAulaId(a.aula_id || aula.id); setEditMode(true) }}
                 title="Clic para reasignar"
               >
-                {aula.numero}
+                {a.aula_numero || aula.numero}
               </span>
             ) : (
               <span
@@ -395,7 +395,7 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
           </div>
         )}
       </td>
-      <td className="td-muted">{aula?.edificio?.nombre || '—'}</td>
+      <td className="td-muted">{a.edificio_nombre || aula?.edificio?.nombre || '—'}</td>
       <td className="td-muted" style={{ fontSize: '12px' }}>{horario}</td>
       <td style={{ textAlign: 'right' }}>
         <Badge estado={a.estado} />
