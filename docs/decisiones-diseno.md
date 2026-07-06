@@ -152,21 +152,43 @@ donde los usuarios son identificados por su dirección de correo institucional, 
 
 ### Contexto
 
-La auditoría pre-deploy identificó como hallazgo importante la configuración permisiva
-de CORS (wildcard `*`). Se corrigió antes del deploy implementando soporte para la
-variable de entorno `ALLOWED_ORIGINS`.
+## 7. Comportamiento de CORS en Producción
+
+### Ambigüedad Original
+
+No había una política definida sobre qué orígenes podían consumir la API en producción.
 
 ### Implementación Real
 
-- Si `ALLOWED_ORIGINS` **está definida**: CORS se restringe a la lista de orígenes separados
-  por coma (ej: `https://aulamatch-frontend.onrender.com,https://app.aulamatch.edu`).
-- Si `ALLOWED_ORIGINS` **no está definida** (incluyendo el plan Free de Render sin frontend):
-  CORS queda abierto a todos los orígenes (`*`), pero **emite un `console.warn` visible
-  en los logs del servidor** advirtiendo que el entorno no tiene CORS restringido.
+El archivo `app.js` de la API incluye un middleware `cors()` configurado a partir de la
+variable de entorno `ALLOWED_ORIGINS`. Cuando esta variable no está definida o está vacía
+(como ocurre actualmente en el entorno de producción en Render), el middleware hace un
+fallback e imprime en consola:
+`[CORS] ALLOWED_ORIGINS no definido. Permitiendo todos los orígenes (*)`
+Y se configura con `origin: '*'` permitiendo cualquier petición cross-origin.
 
 ### Justificación
 
-Para el MVP académico evaluado sin frontend en producción, esta configuración permite
-que el Swagger UI y herramientas como Postman funcionen sin restricciones. El warning
-garantiza visibilidad del riesgo sin romper la funcionalidad de demo.
+Este fallback fue diseñado para que, en caso de omisión de configuración durante las pruebas
+o fases tempranas, la API no se vuelva inoperable de forma silenciosa para el frontend.
+Queda documentado como una decisión transitoria: una vez deployado el frontend de AulaMatch,
+se debe actualizar la variable `ALLOWED_ORIGINS` en el dashboard de Render con la URL definitiva
+del frontend para asegurar el endpoint.
 
+---
+
+## 8. Campos adicionales en Listado de Asignaciones (Docente y Carrera)
+
+### Ambigüedad Original
+
+El diseño visual de la Actividad 4 (PDF) indica que la tabla densa del panel de Asignaciones contiene columnas para "Docente" y "Carreras" (Chips de carrera). Sin embargo, el esquema JSON devuelto por la API en `GET /api/asignaciones` aplanaba sólo la materia, el aula y el edificio, pero omitía los JOINs a las tablas `docente` y `carrera`.
+
+### Implementación Real
+
+Se modificó la consulta SQL de `_queryAsignaciones` en `backend/src/modules/asignaciones/service.js` para que retorne:
+- `docente_nombre`: Mapeado mediante un `LEFT JOIN docente` (así se evitan conflictos si una comisión careciera de docente asignado, y se previene la duplicación de filas por la cardinalidad 1:1).
+- `carrera_nombre`: Mapeado mediante un subquery agregado usando `json_agg` sobre `carrera_materia` y `carrera`. Dado que una materia puede pertenecer a múltiples carreras, el `JOIN` simple duplicaría las asignaciones. El subquery asegura que la fila base de la asignación sea única, exponiendo las carreras asociadas como un Array de JSON en línea.
+
+### Justificación
+
+Esta modificación expone estrictamente los datos requeridos para que el frontend cumpla con el modelo visual definido originalmente en Figma AI, sin alterar los campos que ya se venían consumiendo y manteniendo la integridad de las filas únicas.

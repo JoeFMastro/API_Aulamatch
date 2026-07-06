@@ -311,7 +311,7 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
   const comision = a.comision || a
   const aula = a.aula || a
   const bandas = comision.bandas_horarias || comision.bandasHorarias || []
-  const carreras = comision.materia?.carreras || []
+  const carreras = a.carrera_nombre || comision.materia?.carreras || []
 
   const horario = a.horario ? a.horario : bandas.length > 0
     ? bandas.map(b => `${b.dia?.slice(0, 2)} ${b.hora_inicio?.slice(0, 5)}–${b.hora_fin?.slice(0, 5)}`).join(', ')

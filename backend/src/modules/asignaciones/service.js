@@ -174,9 +174,17 @@ async function _queryAsignaciones(whereClause, params) {
         m.id                 AS materia_id,
         m.nombre             AS materia_nombre,
         ua.id                AS unidad_academica_id,
-        ua.nombre            AS unidad_academica_nombre
+        ua.nombre            AS unidad_academica_nombre,
+        d.nombre || ' ' || d.apellido AS docente_nombre,
+        (
+            SELECT json_agg(json_build_object('id', c.id, 'nombre', c.nombre, 'codigo', c.codigo))
+            FROM carrera_materia cm
+            JOIN carrera c ON c.id = cm.carrera_id
+            WHERE cm.materia_id = m.id
+        ) AS carrera_nombre
      FROM asignacion a
      JOIN comision          co ON co.id  = a.comision_id
+     LEFT JOIN docente      d  ON d.id   = co.docente_id
      JOIN materia           m  ON m.id   = co.materia_id
      JOIN unidad_academica  ua ON ua.id  = m.unidad_academica_id
      JOIN aula              au ON au.id  = a.aula_id

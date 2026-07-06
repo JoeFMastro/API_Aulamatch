@@ -8,6 +8,17 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.11] — 2026-07-06 · Fix: Inclusión de Docentes y Carreras en listado de asignaciones
+
+### Corregido (Backend)
+
+- **`backend/src/modules/asignaciones/service.js`**: Modificada la query de `_queryAsignaciones` agregando un `LEFT JOIN` a la tabla `docente` y una subquery escalar con `json_agg` sobre `carrera_materia` y `carrera`. 
+  - Expone `docente_nombre` garantizando cardinalidad 1:1.
+  - Expone `carrera_nombre` como un array de objetos JSON que evita el error de producto cartesiano (Cartesian Product), permitiendo al frontend renderizar los chips de carrera requeridos en el diseño.
+- **`docs/decisiones-diseno.md`**: Documentada la nueva decisión arquitectónica sobre este endpoint.
+
+---
+
 ## [v1.10] — 2026-07-06 · Implementación del Frontend (React + Vite)
 
 ### Agregado
