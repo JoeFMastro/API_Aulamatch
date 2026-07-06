@@ -44,18 +44,35 @@ export default function Conflictos() {
 
   useEffect(() => { cargar() }, [])
 
+  const [aulasOptions, setAulasOptions] = useState([])
+  const [loadingAulas, setLoadingAulas] = useState(false)
+  const [errorAulas, setErrorAulas] = useState(null)
+
+  // Fetch aulas when a conflicto is selected
+  useEffect(() => {
+    if (selected) {
+      setLoadingAulas(true)
+      setErrorAulas(null)
+      api.getAulasCompatibles(selected.comision_id || selected.comision?.id || selected.id)
+        .then(res => setAulasOptions(res || []))
+        .catch(err => {
+          console.error('Error fetching aulas:', err)
+          setErrorAulas('Error al cargar aulas compatibles.')
+        })
+        .finally(() => setLoadingAulas(false))
+    }
+  }, [selected])
+
   async function handleResolver() {
-    if (!selected || !nuevoAulaId) return
+    if (!nuevoAulaId || !selected) return
     setResolving(true)
-    setSuccessMsg('')
     try {
       await api.updateAsignacion(selected.id, Number(nuevoAulaId))
-      setSuccessMsg(`✅ Asignación #${selected.id} actualizada al aula ${nuevoAulaId}.`)
       setSelected(null)
       setNuevoAulaId('')
-      await cargar()
+      cargar()
     } catch (err) {
-      setError(err.message)
+      alert(err.message)
     } finally {
       setResolving(false)
     }
@@ -249,23 +266,41 @@ export default function Conflictos() {
                 )}
               </div>
 
-              {/* Input de nueva aula */}
+              {/* Select de nueva aula */}
               <div className="form-group">
                 <label className="form-label">
-                  Reasignar a aula (ID numérico)
+                  Reasignar a aula compatible
                 </label>
-                <input
-                  id="input-nueva-aula"
-                  type="number"
-                  className="form-input"
-                  placeholder="Ej: 5"
-                  value={nuevoAulaId}
-                  onChange={e => setNuevoAulaId(e.target.value)}
-                  min={1}
-                />
-                <p className="text-muted text-sm mt-4">
-                  Ingresá el ID del aula disponible compatible con la comisión.
-                </p>
+                {loadingAulas ? (
+                  <span className="td-muted text-sm">Cargando aulas disponibles...</span>
+                ) : errorAulas ? (
+                  <div className="text-sm mt-4" style={{ color: '#DC2626', background: '#FEF2F2', padding: '8px', borderRadius: '4px' }}>
+                    {errorAulas}
+                  </div>
+                ) : aulasOptions.length === 0 ? (
+                  <div className="text-sm mt-4" style={{ color: '#DC2626', background: '#FEF2F2', padding: '8px', borderRadius: '4px' }}>
+                    No hay aulas compatibles disponibles para este cupo y horario. Requiere resolución manual.
+                  </div>
+                ) : (
+                  <>
+                    <select
+                      id="input-nueva-aula"
+                      className="form-input"
+                      value={nuevoAulaId}
+                      onChange={e => setNuevoAulaId(e.target.value)}
+                    >
+                      <option value="">Seleccione aula...</option>
+                      {aulasOptions.map(opt => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.numero} (Cap: {opt.capacidad}) - {opt.edificio_nombre}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-muted text-sm mt-4">
+                      Se muestran las aulas disponibles sin superposición horaria.
+                    </p>
+                  </>
+                )}
               </div>
 
               <button

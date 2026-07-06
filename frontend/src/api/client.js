@@ -72,6 +72,8 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ aula_id }),
     }),
+  getAulasCompatibles: (comisionId) =>
+    request(`/asignaciones/${comisionId}/aulas-compatibles`),
   deleteAsignacion: (id) =>
     request(`/asignaciones/${id}`, { method: 'DELETE' }),
 

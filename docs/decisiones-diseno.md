@@ -192,3 +192,20 @@ Se modificó la consulta SQL de `_queryAsignaciones` en `backend/src/modules/asi
 ### Justificación
 
 Esta modificación expone estrictamente los datos requeridos para que el frontend cumpla con el modelo visual definido originalmente en Figma AI, sin alterar los campos que ya se venían consumiendo y manteniendo la integridad de las filas únicas.
+
+---
+
+## 9. Selector Inteligente de Aulas (Filtro Estricto)
+
+### Ambigüedad Original
+
+El diseño de la Actividad 4 contemplaba asignación y resolución de conflictos de aulas, pero no especificaba explícitamente cómo el usuario debía conocer qué aulas estaban libres al reasignar manualmente, provocando que se introdujera un ID numérico a ciegas.
+
+### Implementación Real
+
+Se habilitó el endpoint `GET /api/asignaciones/:comisionId/aulas-compatibles` que reutiliza la función central de `_encontrarAulaDisponible` del motor automático. En el frontend, este endpoint alimenta un `<select>` asíncrono para facilitar la resolución manual en las pantallas de Asignaciones y Conflictos.
+Se decidió intencionalmente mantener un **filtro estricto** en esta lista: solo muestra aulas que cumplen con la capacidad (≥ inscriptos), coinciden o superan el tipo requerido (ej. AUDITORIO sirve para AULA) y no tienen ninguna superposición horaria real.
+
+### Justificación
+
+Si la lista de aulas devuelve vacío, se notifica claramente al usuario que "No hay aulas compatibles disponibles para este cupo y horario". En este MVP, no se incluyó un mecanismo de flexibilización por interfaz (ej. "forzar aula ignorando el cupo"); los conflictos complejos donde la capacidad física no da abasto quedan explícitamente sin resolver mediante esta vía de asistencia, priorizando la consistencia y las reglas de negocio base establecidas en la Actividad 4.

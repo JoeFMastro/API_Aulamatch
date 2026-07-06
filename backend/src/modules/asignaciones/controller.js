@@ -151,7 +151,7 @@ async function aulasCompatibles(req, res, next) {
     if (!Number.isInteger(comisionId) || comisionId <= 0) {
       return res.status(400).json({ error: 'El parámetro "id" debe ser un entero positivo' });
     }
-    const aulas = await service.aulasCompatiblesParaComision(comisionId);
+    const aulas = await service.obtenerAulasCompatibles(comisionId);
     res.json(aulas);
   } catch (err) {
     next(err);

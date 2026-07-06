@@ -265,14 +265,13 @@ async function listarAsignaciones(filtros = {}) {
 // ─────────────────────────────────────────────────────────────────
 
 /**
- * Devuelve las aulas disponibles y compatibles para una comisión:
- * cumple tipo, capacidad y no tiene superposición horaria.
- * Las aulas del edificio preferido de la UA van primero.
+ * Busca aulas compatibles (por capacidad y tipo) que estén disponibles en el horario
+ * de la comisión. Se exporta para uso en resolución asistida y motor automático.
  *
- * @param {number} comisionId
- * @returns {Promise<object[]>} aulas ordenadas: preferidas primero
+ * @param {number} comision_id
+ * @returns {Promise<object[]>} Lista de aulas disponibles ordenadas por preferencia/capacidad
  */
-async function aulasCompatiblesParaComision(comisionId) {
+async function obtenerAulasCompatibles(comision_id) {
   // 1. Obtener datos de la comisión
   const { rows: comRows } = await db.query(
     `SELECT co.id, co.inscriptos, co.modalidad,
@@ -281,25 +280,23 @@ async function aulasCompatiblesParaComision(comisionId) {
        JOIN materia          m  ON m.id  = co.materia_id
        JOIN unidad_academica ua ON ua.id = m.unidad_academica_id
       WHERE co.id = $1`,
-    [comisionId]
+    [comision_id]
   );
   if (comRows.length === 0) {
-    const err = new Error(`Comisión con id ${comisionId} no encontrada`);
+    const err = new Error(`Comisión con id ${comision_id} no encontrada`);
     err.status = 404;
     throw err;
   }
   const com = comRows[0];
 
   // 2. Obtener bandas horarias de la comisión
-  const bandas = await obtenerBandasDeComision(comisionId);
+  const bandas = await obtenerBandasDeComision(comision_id);
   const tiposClase = [...new Set(bandas.map(b => b.tipo_clase))];
 
   // 3. Inferir tipo de aula requerido
   const tipoRequerido = inferirTipoAula(com.modalidad, tiposClase, com.inscriptos);
 
   // 4. Obtener aulas candidatas por tipo y capacidad
-  //    Orden de tipo: SALA_VIDEOCONFERENCIA y LABORATORIO deben coincidir exactamente.
-  //    AULA y AUDITORIO aceptan tipo mayor (AUDITORIO sirve para AULA si tiene cupo).
   let tiposAceptados;
   if (tipoRequerido === 'AULA') {
     tiposAceptados = ['AULA', 'AUDITORIO']; // un auditorio puede usarse como aula
@@ -696,7 +693,7 @@ async function eliminarAsignacion(id) {
 
 module.exports = {
   listarAsignaciones,
-  aulasCompatiblesParaComision,
+  obtenerAulasCompatibles,
   ejecutarAsignacionAutomatica,
   crearAsignacionManual,
   actualizarAsignacion,

@@ -8,6 +8,16 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12] — 2026-07-06 · Feat: Selector Inteligente de Aulas Compatibles
+
+### Agregado
+
+- **Backend**: Endpoint `GET /api/asignaciones/:comisionId/aulas-compatibles` habilitado para listar aulas que cumplen estrictamente con capacidad, tipo y disponibilidad horaria.
+- **Frontend**: Selector interactivo (`<select>`) en las pantallas de **Asignaciones** (modo edición) y **Conflictos** (panel de resolución), reemplazando la entrada manual de ID numérico.
+- **Manejo de Errores y Vacíos**: Si no hay aulas compatibles disponibles bajo el filtro estricto, el frontend alerta al usuario explícitamente y evita dejar opciones inválidas.
+
+---
+
 ## [v1.11] — 2026-07-06 · Fix: Inclusión de Docentes y Carreras en listado de asignaciones
 
 ### Corregido (Backend)

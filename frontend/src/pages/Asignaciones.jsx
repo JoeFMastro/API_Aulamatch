@@ -317,6 +317,25 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
     ? bandas.map(b => `${b.dia?.slice(0, 2)} ${b.hora_inicio?.slice(0, 5)}–${b.hora_fin?.slice(0, 5)}`).join(', ')
     : '—'
 
+  const [aulasOptions, setAulasOptions] = useState([])
+  const [loadingAulas, setLoadingAulas] = useState(false)
+  const [errorAulas, setErrorAulas] = useState(null)
+
+  // Fetch aulas when entering edit mode
+  useEffect(() => {
+    if (editMode) {
+      setLoadingAulas(true)
+      setErrorAulas(null)
+      api.getAulasCompatibles(a.comision_id || a.id)
+        .then(res => setAulasOptions(res || []))
+        .catch(err => {
+          console.error('Error fetching aulas:', err)
+          setErrorAulas('Error al cargar aulas')
+        })
+        .finally(() => setLoadingAulas(false))
+    }
+  }, [editMode, a.comision_id, a.id])
+
   async function handleSaveAula() {
     if (!aulaId) return
     setSaving(true)
@@ -360,15 +379,28 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
       <td>
         {editMode ? (
           <div className="flex items-center gap-8">
-            <input
-              type="number"
-              className="filter-input"
-              placeholder="ID aula"
-              value={aulaId}
-              onChange={e => setAulaId(e.target.value)}
-              style={{ width: '80px' }}
-            />
-            <button className="btn btn-primary btn-sm" onClick={handleSaveAula} disabled={saving}>
+            {loadingAulas ? (
+              <span className="td-muted text-sm">Cargando aulas...</span>
+            ) : errorAulas ? (
+              <span className="text-sm" style={{ color: '#DC2626' }}>{errorAulas}</span>
+            ) : aulasOptions.length === 0 ? (
+              <span className="td-muted text-sm" style={{ fontStyle: 'italic' }}>No hay aulas compatibles disponibles para este horario/cupo.</span>
+            ) : (
+              <select
+                className="filter-input"
+                value={aulaId}
+                onChange={e => setAulaId(e.target.value)}
+                style={{ width: '140px' }}
+              >
+                <option value="">Seleccione aula...</option>
+                {aulasOptions.map(opt => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.numero} (Cap: {opt.capacidad}) - {opt.edificio_nombre}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button className="btn btn-primary btn-sm" onClick={handleSaveAula} disabled={saving || !aulaId}>
               {saving ? '...' : '✓'}
             </button>
             <button className="btn btn-ghost btn-sm" onClick={() => setEditMode(false)}>✕</button>
