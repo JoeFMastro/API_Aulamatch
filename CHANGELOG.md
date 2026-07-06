@@ -8,6 +8,15 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.3] — 2026-07-06 · Refactor: Estandarizar campo id en GET /api/conflictos, deprecar asignacion_id
+
+### Modificado
+- **Backend**: Se modificó `GET /api/conflictos` para devolver el campo `id` referenciando al ID de la asignación de manera consistente con la API. El campo `asignacion_id` se mantiene por retrocompatibilidad pero queda oficialmente deprecado.
+- **Frontend**: Se migró el panel de Conflictos (`Conflictos.jsx`) para consumir directamente el campo `id`, erradicando el uso del fallback (`selected.asignacion_id || selected.id`).
+- **Documentación**: Documentado el plan de deprecación y la auditoría de ausencia de colisiones en `docs/decisiones-diseno.md`.
+
+---
+
 ## [v1.12.2] — 2026-07-06 · Docs: Auditoría y actualización completa de documentación post-deploy
 
 ### Modificado

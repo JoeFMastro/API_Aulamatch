@@ -225,3 +225,18 @@ Se modificó el endpoint de listado de conflictos para devolver de forma aditiva
 ### Justificación
 
 Este approach mantiene la semántica de "un conflicto por fila" y respeta la agregación existente (`GROUP BY`), mientras expone el string legible del horario (ej. `LU 14:00-16:00, MI 14:00-16:00`) que el frontend ahora renderiza en la tabla, clarificando enormemente el contexto para la resolución manual.
+
+---
+
+## 11. Estandarización de `id` y Deprecación de `asignacion_id` en `GET /api/conflictos`
+
+### Inconsistencia Detectada
+Se detectó que el endpoint `GET /api/conflictos` devolvía el identificador principal de la asignación bajo la clave `asignacion_id`, mientras que el resto de la API (`GET /api/asignaciones`, `PATCH /api/asignaciones/:id`) utilizaba simplemente `id`. Esto forzaba al frontend a utilizar fallbacks frágiles (`selected.asignacion_id || selected.id`).
+
+### Auditoría de Colisión (Fase 0)
+Antes de modificar el contrato, se auditó la consulta SQL base en `backend/src/modules/conflictos/service.js` (`listarConflictos`). Se verificó que la respuesta a nivel de raíz no contenía ninguna otra propiedad llamada `id` (sólo alias específicos como `comision_id`, `aula_id`, etc.). Por lo tanto, **no hubo colisión de nombres** y fue seguro utilizar `id` para referirse a la asignación.
+
+### Plan de Deprecación (Fase 1 y 2)
+1. **Cambio aditivo:** Se modificó la consulta para devolver `a.id AS id` manteniendo en paralelo `a.id AS asignacion_id` por estricta retrocompatibilidad.
+2. **Migración:** El frontend fue refactorizado para consumir exclusivamente `id`, eliminando todos los fallbacks lógicos en `Conflictos.jsx`.
+3. **Deprecación:** `asignacion_id` queda marcado formalmente como **deprecado**. Se mantendrá en la respuesta de la API temporalmente, y podrá ser eliminado de forma segura en una próxima versión mayor una vez que se corrobore la ausencia de consumidores heredados.

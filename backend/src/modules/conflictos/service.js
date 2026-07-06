@@ -314,6 +314,7 @@ async function listarConflictos({ unidadAcademicaId } = {}) {
 
   const { rows } = await db.query(
     `SELECT
+        a.id                  AS id,
         a.id                  AS asignacion_id,
         a.estado,
         a.es_manual,

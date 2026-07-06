@@ -67,7 +67,7 @@ export default function Conflictos() {
     if (!nuevoAulaId || !selected) return
     setResolving(true)
     try {
-      const asignacionId = selected.asignacion_id || selected.id
+      const asignacionId = selected.id
       await api.updateAsignacion(asignacionId, Number(nuevoAulaId))
       setSelected(null)
       setNuevoAulaId('')
@@ -177,8 +177,8 @@ export default function Conflictos() {
                     const comision = c.comision || c
                     const aula = c.aula
                     const tipo = tipoConflicto(c)
-                    const cId = c.asignacion_id || c.id
-                    const sId = selected?.asignacion_id || selected?.id
+                    const cId = c.id
+                    const sId = selected?.id
                     const isSelected = sId === cId
 
                     return (
@@ -260,7 +260,7 @@ export default function Conflictos() {
               {/* Info del conflicto */}
               <div className="card card-sm" style={{ background: '#FEF2F2', borderColor: '#FECACA' }}>
                 <div style={{ fontSize: '12px', fontWeight: 600, color: '#DC2626', marginBottom: '6px' }}>
-                  Conflicto #{selected.asignacion_id || selected.id}
+                  Conflicto #{selected.id}
                 </div>
                 <div style={{ fontSize: '13px' }}>
                   <strong>{selected.comision_codigo || (selected.comision || selected).codigo}</strong>
