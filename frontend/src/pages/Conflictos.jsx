@@ -150,7 +150,7 @@ export default function Conflictos() {
             </div>
             {loading ? (
               <LoadingSpinner text="Detectando conflictos..." />
-            ) : conflictos.length === 0 ? (
+            ) : error ? null : conflictos.length === 0 ? (
               <EmptyState
                 icon="✅"
                 title="Sin conflictos activos"

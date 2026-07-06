@@ -8,6 +8,14 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.5] — 2026-07-06 · Fix(conflictos): Error 500 por tipo de dato en LEFT() y estado UI contradictorio
+
+### Corregido
+- **Backend**: Resuelto Error 500 en `GET /api/conflictos` causado por la función `LEFT()` de PostgreSQL intentando operar sobre un tipo de dato ENUM (`dia_semana`) sin un cast previo explícito a texto (`LEFT(bh.dia::text, 2)`).
+- **Frontend**: Corregido un estado contradictorio en `Conflictos.jsx` donde, al fallar la petición a `GET /api/conflictos`, se renderizaba simultáneamente el banner de error y el estado de éxito "Sin conflictos activos". Ahora los estados son mutuamente excluyentes, mostrando solo el error si la petición falla.
+
+---
+
 ## [v1.12.4] — 2026-07-06 · Fix(reportes): Corregir parser de CSV en tests de integración
 
 ### Corregido

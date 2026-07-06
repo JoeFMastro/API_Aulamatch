@@ -337,7 +337,7 @@ async function listarConflictos({ unidadAcademicaId } = {}) {
         ua.id                 AS unidad_academica_id,
         ua.nombre             AS unidad_academica_nombre,
         (
-          SELECT string_agg(LEFT(bh.dia, 2) || ' ' || LEFT(bh.hora_inicio::text, 5) || '–' || LEFT(bh.hora_fin::text, 5), ', ')
+          SELECT string_agg(LEFT(bh.dia::text, 2) || ' ' || LEFT(bh.hora_inicio::text, 5) || '–' || LEFT(bh.hora_fin::text, 5), ', ')
           FROM banda_horaria bh
           WHERE bh.comision_id = co.id
         ) AS horario,
