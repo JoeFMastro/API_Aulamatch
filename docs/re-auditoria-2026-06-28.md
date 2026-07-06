@@ -4,6 +4,9 @@
 > El sistema ha continuado evolucionando desde esa fecha (módulo de Reportes, seed de demo, endpoint de reset, documentación de visión futura).
 > Para el estado actual del proyecto, ver [guia-deploy-render.md](guia-deploy-render.md).
 
+> [!CAUTION]
+> **Este documento es un registro histórico del estado del proyecto al 28/06/2026. El estado actual puede diferir.**
+
 # Reporte de Re-Auditoría de Listo para Producción (Pre-Deploy Render)
 **Fecha:** 28 de Junio de 2026  
 **Auditor:** Antigravity (Auditor Técnico Senior de Backend)  

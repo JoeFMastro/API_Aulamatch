@@ -104,7 +104,9 @@ Copiar el output completo (96 caracteres hex) y pegarlo como valor de `JWT_SECRE
    - **Dockerfile Path:** `backend/Dockerfile`
    - **Docker Build Context:** `backend` (directorio del backend)
    - **Docker Build Target:** `prod`
+   - **Docker Command:** `node server.js` (para forzar el stage correcto en producción)
 4. En **Advanced** (o al editar después):
+   - **Health Check Path:** `/api/health`
    - Desactivar cualquier opción de "auto-deploy from docker-compose" si aparece.
 
 ---
@@ -118,7 +120,7 @@ Copiar el output completo (96 caracteres hex) y pegarlo como valor de `JWT_SECRE
     DATABASE_URL    = <Internal Database URL del Paso 2>
     JWT_SECRET      = <cadena generada con el comando de la sección anterior>
     JWT_EXPIRES_IN  = 24h
-    ALLOWED_ORIGINS = https://tu-frontend.onrender.com
+    ALLOWED_ORIGINS = https://aulamatch-frontend.onrender.com
     NODE_ENV        = production
     PORT            = 3001
    ```

@@ -8,6 +8,21 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.2] — 2026-07-06 · Docs: Auditoría y actualización completa de documentación post-deploy
+
+### Modificado
+- **Documentación (`docs/`)**:
+  - `guia-deploy-render.md`: Actualizada para reflejar el estado real del deploy (contexto `backend/`, Docker Command `node server.js`, Health Check `/api/health`, workaround del CLI para migraciones/seed en plan Free).
+  - `guia-desarrollo-local.md`: Verificados los comandos locales y removidas las referencias obsoletas a directorios o variables antiguas.
+  - `auditoria-2026-06-28.md` y `re-auditoria-2026-06-28.md`: Marcados explícitamente con un banner de archivo histórico (caution) para evitar confusión con el estado actual.
+
+### Agregado
+- **Documentación (`docs/`)**:
+  - Validado y complementado `vision-futura.md` que detalla la propuesta técnica (Agente LLM + MCP Server) solicitada por el evaluador académico.
+  - Se consolida el registro de las funcionalidades ya implementadas en iteraciones previas (deploy en Render completado, seed de demo, módulo de reportes).
+
+---
+
 ## [v1.12.1] — 2026-07-06 · Fix: Reasignación en panel de conflictos y mejoras de UI
 
 ### Corregido

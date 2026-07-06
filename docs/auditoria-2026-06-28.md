@@ -4,6 +4,9 @@
 > Todos los hallazgos bloqueantes e importantes listados aquí **ya fueron resueltos**.
 > Para el estado actual del proyecto, ver [guia-deploy-render.md](guia-deploy-render.md) y [re-auditoria-2026-06-28.md](re-auditoria-2026-06-28.md).
 
+> [!CAUTION]
+> **Este documento es un registro histórico del estado del proyecto al 28/06/2026. El estado actual puede diferir.**
+
 # Reporte de Auditoría Técnica Pre-Despliegue — AulaMatch (2026-06-28)
 
 ## 1. Resumen Ejecutivo
