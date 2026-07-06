@@ -88,3 +88,85 @@ Para el MVP se optó por un **mecanismo de notificación stateless basado en la 
 3. **Interfaz fluida:** Si el número de conflictos es superior a cero, el sistema dibuja un badge de alerta (rojo) en la barra de navegación del Coordinador para notificarle en tiempo real. 
 
 Esta solución mantiene la base de datos simple, evita el crecimiento desmedido de tablas de log/notificación, y es consistente con la arquitectura REST stateless descrita en la Sección 6 y 10.5.
+
+> **Nota de implementación (corr. post-deploy):** La tabla `notificacion` **sí fue creada** en producción
+> (ver `backend/sql/03_notificaciones.sql`). Se utiliza para persistir el historial de conflictos
+> detectados, permitir el marcado de "atendida" en el flujo de resolución y alimentar las
+> métricas del panel. La descripción stateless de esta sección documenta el énfasis en la
+> entidad `Asignación` como pivot, lo cual sigue siendo válido, pero la tabla de notificaciones
+> existe y complementa ese mecanismo.
+
+---
+
+## 5. Regla de Inferencia de Tipo de Aula (`inferirTipoAula`)
+
+### Ambigüedad Original (Sección 8, Ambigüedad 2)
+
+El pseudocódigo del algoritmo de asignación automática nombra la función
+`inferirTipoAula(modalidad, tipoClase)` sin definir sus reglas internas.
+
+### Implementación Real
+
+Se define una regla propia, documentada explícitamente en el CHANGELOG v1.4:
+
+| Condición | Tipo de aula inferido |
+|---|---|
+| `modalidad == VIRTUAL` (siempre) | `SALA_VIDEOCONFERENCIA` |
+| `modalidad == PRESENCIAL` o `HÍBRIDA` con banda `PRACTICA` | `LABORATORIO` |
+| `modalidad == PRESENCIAL` o `HÍBRIDA` con banda `TEORICA` e `inscriptos >= 80` | `AUDITORIO` |
+| Resto de casos | `AULA` |
+
+### Justificación
+
+El umbral de 80 inscriptos para `AUDITORIO` es un valor propio que separa semánticamente
+aulas grandes de auditorios, alineado con las capacidades del seed de demo (`CI-AUD` = 100 plazas).
+Está definido como constante `UMBRAL_AUDITORIO` en `asignaciones/service.js` para
+facilitar ajustes futuros sin modificar la lógica.
+
+---
+
+## 6. Campo de Identificación para Login: `email` en vez de `username`
+
+### Ambigüedad Original (Sección 8, Ambigüedad 1)
+
+El diseño original define la tabla `usuario` con los campos `id, email, password_hash, rol,
+unidad_academica_id` con `email` como campo de identidad. Sin embargo, la tabla de endpoints
+(Sección 4) no especifica qué campo se usa como identificador en el body de `POST /api/auth/login`.
+
+### Implementación Real
+
+El endpoint `POST /api/auth/login` recibe `{ email, password }` (no `username`).
+Esto es coherente con el esquema de la tabla `usuario` donde `email` es el campo
+único indexado (`UNIQUE`). El seed de usuarios de producción utiliza:
+- `coordinador@aulamatch.edu` / `Coord1234!`
+- `admin@aulamatch.edu` / `Admin1234!`
+
+### Justificación
+
+Usar `email` como identificador es más natural para un sistema institucional universitario
+donde los usuarios son identificados por su dirección de correo institucional, no por un alias inventado.
+
+---
+
+## 7. Comportamiento de CORS en Ausencia de `ALLOWED_ORIGINS`
+
+### Contexto
+
+La auditoría pre-deploy identificó como hallazgo importante la configuración permisiva
+de CORS (wildcard `*`). Se corrigió antes del deploy implementando soporte para la
+variable de entorno `ALLOWED_ORIGINS`.
+
+### Implementación Real
+
+- Si `ALLOWED_ORIGINS` **está definida**: CORS se restringe a la lista de orígenes separados
+  por coma (ej: `https://aulamatch-frontend.onrender.com,https://app.aulamatch.edu`).
+- Si `ALLOWED_ORIGINS` **no está definida** (incluyendo el plan Free de Render sin frontend):
+  CORS queda abierto a todos los orígenes (`*`), pero **emite un `console.warn` visible
+  en los logs del servidor** advirtiendo que el entorno no tiene CORS restringido.
+
+### Justificación
+
+Para el MVP académico evaluado sin frontend en producción, esta configuración permite
+que el Swagger UI y herramientas como Postman funcionen sin restricciones. El warning
+garantiza visibilidad del riesgo sin romper la funcionalidad de demo.
+

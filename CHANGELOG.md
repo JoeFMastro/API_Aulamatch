@@ -8,7 +8,136 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.9] — 2026-07-06 · Auditoría y actualización completa de documentación post-deploy
+
+### Modificado
+
+- **`docs/diseño-original.md`** — Agregada la Sección 10 "Nota de Implementación" al final del
+  documento. Resume todas las desviaciones del diseño original con tabla de referencia cruzada
+  a los documentos donde cada decisión está justificada. El contenido sustantivo del diseño
+  no fue modificado.
+
+- **`docs/decisiones-diseno.md`** — Agregadas tres nuevas secciones de decisiones no documentadas:
+  - **§5 `inferirTipoAula`**: Regla propia para determinar el tipo de aula requerido según
+    modalidad, tipo de clase e inscriptos. Umbral de 80 para AUDITORIO; constante `UMBRAL_AUDITORIO`.
+  - **§6 Campo de login `email`**: Decisión de usar `email` (no `username`) como identificador
+    de autenticación, coherente con el esquema de la tabla `usuario`.
+  - **§7 Comportamiento de CORS**: Documentado el fallback abierto con warning cuando
+    `ALLOWED_ORIGINS` no está definida.
+  - Agregada nota de corrección a §4: la tabla `notificacion` sí fue implementada y existe
+    en producción (`03_notificaciones.sql`), complementando el mecanismo de asignación.
+
+- **`docs/guia-desarrollo-local.md`** — Correcciones y ampliaciones:
+  - Corregida referencia obsoleta a `deploy/init-db/01_schema.sql` → `backend/sql/`.
+  - Agregada Sección 8: tabla completa de variables de entorno con descripción, incluyendo
+    `ALLOWED_ORIGINS` y nota sobre activación automática de SSL con `NODE_ENV=production`.
+  - Agregada Sección 9: estructura de archivos SQL en `backend/sql/` y comandos para
+    aplicar migraciones y seed de demo.
+  - Agregada Sección 10: instrucciones para correr los tests de integración con `npm test`,
+    incluyendo el paso de levantar solo el contenedor de DB.
+
+- **`docs/guia-deploy-render.md`** — Correcciones post-deploy real:
+  - **Paso 6**: Advertencia explícita de que el Shell de Render solo está disponible en
+    planes de pago; en plan Free usar siempre la Opción B.
+  - **Opción B**: Comando corregido a `NODE_ENV=production DATABASE_URL='...' npm run migrate`
+    (comillas simples para evitar interpretación del `!` en Bash; `NODE_ENV=production`
+    para activar SSL que Render requiere).
+  - **Paso 7**: URL de producción real `https://aulamatch-backend.onrender.com` en lugar
+    del placeholder `<tu-servicio>`.
+  - **Paso 8 (nuevo)**: Instrucciones para aplicar el seed de demostración, incluyendo
+    el uso del endpoint `POST /health/reset-db` desde Swagger UI.
+
+- **`docs/auditoria-2026-06-28.md`** — Agregado banner histórico al inicio del documento
+  indicando que es un registro del estado al 28/06/2026 y que todos los hallazgos
+  fueron resueltos. El contenido sustantivo no fue modificado.
+
+- **`docs/re-auditoria-2026-06-28.md`** — Agregado banner histórico al inicio del documento
+  indicando que es un registro de verificación del 28/06/2026 y que el sistema ha
+  continuado evolucionando desde entonces. El contenido sustantivo no fue modificado.
+
+### Creado
+
+- **`docs/vision-futura.md`** — Nuevo documento describiendo la visión del asistente
+  inteligente académico surgida del feedback del profesor evaluador. Incluye:
+  - Descripción de los dos roles del asistente (consulta de datos estructurados y
+    asesoramiento contextual inferido).
+  - Arquitectura propuesta con MCP Server como capa de integración entre LLMs y la API REST.
+  - Tabla de datos disponibles vs. faltantes en la base actual.
+  - Ruta de implementación incremental en 3 etapas.
+  - Marcado claramente como visión futura, sin implementación actual.
+
+### Criterio de calidad verificado
+
+> Ningún documento en `docs/` contiene instrucciones que lleven a un error si se siguen
+> al pie de la letra al 6 de julio de 2026. Los documentos históricos están claramente
+> marcados como tales. El CHANGELOG refleja el estado completo del proyecto hasta esta fecha.
+
+---
+
+## [v1.8] — 2026-07-03 · Endpoints ABM en Swagger + Seed actualizado
+
+### Agregado
+
+- **`backend/src/swagger.yaml`** — Expuestos en Swagger UI los endpoints que ya existían
+  en el código pero no estaban documentados en la interfaz visual:
+  - `POST /edificios` — Crear edificio nuevo.
+  - `POST /aulas` — Crear aula nueva vinculada a un edificio.
+  - `POST /comisiones` — Crear comisión sin aula (lista para el motor automático).
+  - `POST /health/reset-db` — Botón de pánico para demo y evaluación.
+
+- **`backend/sql/04_seed_demo.sql`** — Agregada materia `Inteligencia Artificial` (código
+  `IA-501`) con relación `carrera_materia` hacia la carrera `IS-FRBA`.
+
+### Modificado
+
+- **`docs/guia-evaluacion.md`** — Corregido el comando de reseteo de base de datos:
+  `NODE_ENV=production DATABASE_URL='...' npm run migrate` con comillas simples y
+  `NODE_ENV=production` para activar SSL requerido por Render.
+
+---
+
+## [v1.7] — 2026-07-02 · Deploy en Render + Endpoint de Reset + Fix BOM CSV
+
+### Agregado
+
+- **Deploy completado en producción:**
+  - Web Service: `https://aulamatch-backend.onrender.com`
+  - Render Postgres DB (plan Free, región Oregon)
+  - Auto-deploy configurado desde rama `main` en GitHub.
+  - Migraciones aplicadas exitosamente contra la base de producción.
+
+- **`backend/src/app.js`** — Nuevo endpoint `POST /api/health/reset-db`.
+  - Ejecuta los 4 archivos SQL (`01_schema.sql`, `02_usuarios.sql`, `03_notificaciones.sql`,
+    `04_seed_demo.sql`) directamente desde el servidor en Render.
+  - Permite al evaluador resetear la base de datos a estado "de fábrica" desde Swagger UI
+    sin necesidad de Shell o herramientas externas.
+  - **No requiere autenticación** (diseñado exclusivamente para entornos de demo/evaluación).
+
+- **`backend/sql/04_seed_demo.sql`** — Seed de datos de demostración completo:
+  - 3 edificios (Aulas Norte, Central de Ingeniería, Laboratorios y Posgrado).
+  - 9 aulas de distintos tipos (AULA, LABORATORIO, AUDITORIO, SALA_VIDEOCONFERENCIA).
+  - 3 carreras, 5 materias, 4 docentes.
+  - 8 comisiones del período 2025-Q1.
+  - 4 asignaciones pre-existentes (2 ASIGNADA + 2 CONFLICTO con notificaciones).
+  - Idempotente: usa `ON CONFLICT DO NOTHING` y `WHERE NOT EXISTS` en todos los INSERT.
+
+- **`docs/guia-evaluacion.md`** — Guía paso a paso para evaluadores externos:
+  - Acceso a Swagger UI, autenticación JWT, flujos de prueba sugeridos.
+  - Instrucciones de reseteo de base de datos (Botón de Pánico).
+
+### Corregido
+
+- **`backend/src/modules/reportes/controller.js`** — BOM UTF-8 en CSV inyectado como buffer
+  hexadecimal (`Buffer.from([0xEF, 0xBB, 0xBF])`) en lugar de string `\uFEFF`, para
+  correcta detección por Microsoft Excel en Windows.
+
+- **`backend/src/modules/reportes/service.js`** — Corregido error 500 en
+  `GET /api/reportes/disponibilidad`: el filtro usaba `NOT IN ('CANCELADA', 'RECHAZADA')`
+  pero esos valores no existen en el ENUM `estado_asignacion`. Reemplazado por
+  `IN ('PENDIENTE', 'ASIGNADA', 'CONFLICTO')` — semánticamente equivalente y sin error de tipo.
+
 ## [v1.6] — 2026-07-01 · Módulo Reportes (exportación de asignaciones y disponibilidad de aulas)
+
 
 ### Agregado
 

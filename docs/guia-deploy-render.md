@@ -143,7 +143,12 @@ Copiar el output completo (96 caracteres hex) y pegarlo como valor de `JWT_SECRE
 
 La base de datos de Render comienza **vacía**. Las migraciones deben aplicarse manualmente una sola vez.
 
-#### Opción A — Desde el Shell de Render (recomendada)
+> [!WARNING]
+> El **Shell de Render** (pestaña Shell del Web Service) **solo está disponible en planes de pago**.
+> En el plan Free, la pestaña Shell aparece pero no permite abrir una sesión interactiva.
+> Usá siempre la **Opción B** (desde tu máquina local) si estás en el plan Free.
+
+#### Opción A — Desde el Shell de Render (requiere plan de pago)
 
 1. En el dashboard del Web Service, ir a la pestaña **Shell**.
 2. Esperar a que se abra la terminal del contenedor.
@@ -160,16 +165,24 @@ La base de datos de Render comienza **vacía**. Las migraciones deben aplicarse 
    [migrate] ✅ Todas las migraciones aplicadas correctamente.
    ```
 
-#### Opción B — Desde tu máquina local usando la External URL
+#### Opción B — Desde tu máquina local usando la External URL (recomendada en plan Free)
 
 1. En Render → Postgres DB → **Connections** → copiar la **External Database URL**.
 2. En tu terminal local (dentro de la carpeta `backend/`):
 
    ```bash
-   DATABASE_URL="<External Database URL>" npm run migrate
+   NODE_ENV=production DATABASE_URL='<External Database URL>' npm run migrate
    ```
 
-   > La External URL tiene un formato similar a la Internal pero con un host diferente (accesible desde fuera de Render). Tiene costo de transferencia de datos según el plan.
+   > [!IMPORTANT]
+   > Usar **comillas simples** (`'`) en la URL es obligatorio en Linux/macOS para evitar que
+   > la terminal interprete el signo `!` de la contraseña como un comando de historial de shell.
+   > `NODE_ENV=production` es necesario para activar el SSL que Render requiere.
+
+3. Verificar la salida:
+   ```
+   [migrate] ✅ Todas las migraciones aplicadas correctamente.
+   ```
 
 ---
 
@@ -178,7 +191,7 @@ La base de datos de Render comienza **vacía**. Las migraciones deben aplicarse 
 Hacer una petición al endpoint de salud:
 
 ```bash
-curl https://<tu-servicio>.onrender.com/api/health
+curl https://aulamatch-backend.onrender.com/api/health
 ```
 
 Respuesta esperada:
@@ -193,6 +206,28 @@ Respuesta esperada:
 Si la respuesta es un error 503 o similar, revisar los logs del Web Service en Render para ver si hay variables de entorno faltantes o un problema de conexión a la base.
 
 ---
+
+### Paso 8 — Aplicar el seed de demostración (opcional pero recomendado para evaluación)
+
+El proyecto incluye un seed de datos realistas (FRBA, 8 comisiones, 12 aulas, 2 conflictos
+pre-cargados) que permite demostrar todas las funcionalidades al evaluador.
+
+Desde tu máquina local (con la External URL):
+
+```bash
+NODE_ENV=production DATABASE_URL='<External Database URL>' SEED_DEMO=true npm run migrate
+```
+
+Alternativamente, si el servidor ya está corriendo, se puede usar el endpoint de reset
+directamente desde la interfaz Swagger UI:
+
+1. Abrir `https://aulamatch-backend.onrender.com/api-docs`
+2. Ejecutar `POST /health/reset-db` — no requiere autenticación.
+3. Respuesta esperada: `{ "message": "Base de datos formateada y poblada con datos de demostración exitosamente." }`
+
+> [!NOTE]
+> `POST /health/reset-db` es un endpoint de uso exclusivo para demostración y evaluación.
+> Ejecuta `DROP TABLE ... CASCADE` sobre todas las tablas. **No usar en productión con datos reales.**
 
 ## Notas importantes sobre el plan Free de Render
 

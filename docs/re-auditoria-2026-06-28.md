@@ -1,3 +1,9 @@
+> [!WARNING]
+> **Documento histórico — No usar como referencia de estado actual.**
+> Este reporte registra la verificación post-fix del estado del proyecto al **28 de junio de 2026**, inmediatamente antes del primer deploy en Render.
+> El sistema ha continuado evolucionando desde esa fecha (módulo de Reportes, seed de demo, endpoint de reset, documentación de visión futura).
+> Para el estado actual del proyecto, ver [guia-deploy-render.md](guia-deploy-render.md).
+
 # Reporte de Re-Auditoría de Listo para Producción (Pre-Deploy Render)
 **Fecha:** 28 de Junio de 2026  
 **Auditor:** Antigravity (Auditor Técnico Senior de Backend)  

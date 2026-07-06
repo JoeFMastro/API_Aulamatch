@@ -58,8 +58,8 @@ docker compose -f deploy/docker-compose.yml up --build
 ### ¿Qué hace este comando internamente?
 1. **Carga del archivo `.env`**: El `docker-compose.yml` declara `env_file: - ../.env` en cada servicio, por lo que las variables se cargan automáticamente desde la raíz — no es necesario pasar `--env-file` manualmente.
 2. **Construcción del Backend**: Compila la imagen local del backend utilizando la etapa `dev` del `Dockerfile`.
-3. **Inicio de base de datos**: Levanta PostgreSQL, aplica el script de inicialización (`deploy/init-db/01_schema.sql`) y realiza pruebas de salud.
-4. **Sincronización del Backend**: Espera que la base de datos esté saludable (`service_healthy`) y arranca el backend.
+3. **Inicio de base de datos**: Levanta PostgreSQL y realiza pruebas de salud. Las migraciones del esquema están en `backend/sql/` y se aplican via `npm run migrate` (ver sección de migraciones más abajo).
+4. **Sincronización del Backend**: Espera que la base de datos esté saludable (`service_healthy`) y arranca el backend con nodemon (recarga automática al guardar archivos).
 
 ---
 
@@ -119,3 +119,74 @@ docker compose -f deploy/docker-compose.yml down
 
 > [!CAUTION]
 > Este comando también debe ejecutarse **desde la raíz del repositorio**. Si lo corrés desde `backend/` u otro subdirectorio, Docker Compose no encontrará el archivo `deploy/docker-compose.yml` y fallará con un error de ruta.
+
+---
+
+## 8. Variables de Entorno Relevantes
+
+| Variable | Descripción | Default en `.env.example` |
+|---|---|---|
+| `DATABASE_URL` | URL completa de conexión a PostgreSQL | Armada a partir de las vars individuales |
+| `JWT_SECRET` | Secreto para firmar los JWT (mínimo 32 chars) | Debe generarse manualmente |
+| `JWT_EXPIRES_IN` | Vigencia del token | `8h` |
+| `ALLOWED_ORIGINS` | Orígenes permitidos por CORS (separados por coma) | Si no se define, CORS queda abierto con un warning en consola |
+| `PORT` | Puerto del servidor Express | `3001` |
+| `HOST_DB_PORT` | Puerto del host para PostgreSQL (Docker) | `5432` |
+| `HOST_BACKEND_PORT` | Puerto del host para la API (Docker) | `3001` |
+| `NODE_ENV` | Entorno de ejecución | `development` (en producción Render setea `production`) |
+
+> [!NOTE]
+> `NODE_ENV=production` activa la conexión SSL a PostgreSQL. En desarrollo local con Docker, SSL queda desactivado automáticamente — no requiere ninguna configuración manual.
+
+---
+
+## 9. Migraciones SQL
+
+Los archivos SQL del esquema de base de datos están en `backend/sql/`:
+
+```
+backend/sql/
+├── 01_schema.sql       # ENUMs + 10 tablas de dominio
+├── 02_usuarios.sql     # Tabla usuario + seed de desarrollo
+├── 03_notificaciones.sql # Tabla notificacion
+└── 04_seed_demo.sql    # Datos de demostración (opcional)
+```
+
+Para aplicar las migraciones en la base local levantada con Docker:
+
+```bash
+# Desde la carpeta backend/
+npm run migrate
+```
+
+Para aplicar solo el seed de demo (sobre una base ya migrada):
+
+```bash
+SEED_DEMO=true npm run migrate
+```
+
+---
+
+## 10. Correr los Tests de Integración
+
+Los tests requieren que el contenedor de base de datos esté corriendo (no el contenedor del backend). Levantá solo el servicio de DB si querés correr los tests sin el servidor de desarrollo:
+
+```bash
+# Desde la raíz del repositorio
+docker compose -f deploy/docker-compose.yml up db -d
+```
+
+Luego, desde la carpeta `backend/`:
+
+```bash
+npm test
+```
+
+Resultado esperado:
+
+```
+Test Suites: 4 passed, 4 total
+Tests:       23 passed, 23 total
+```
+
+> Los tests usan la base de datos configurada en `backend/.env.test` (separada de la base de desarrollo para evitar contaminación de datos entre suites).

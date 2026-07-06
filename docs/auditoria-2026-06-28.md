@@ -1,3 +1,9 @@
+> [!WARNING]
+> **Documento histórico — No usar como referencia de estado actual.**
+> Este reporte registra el estado del proyecto al **28 de junio de 2026**, antes del deploy en Render.
+> Todos los hallazgos bloqueantes e importantes listados aquí **ya fueron resueltos**.
+> Para el estado actual del proyecto, ver [guia-deploy-render.md](guia-deploy-render.md) y [re-auditoria-2026-06-28.md](re-auditoria-2026-06-28.md).
+
 # Reporte de Auditoría Técnica Pre-Despliegue — AulaMatch (2026-06-28)
 
 ## 1. Resumen Ejecutivo
