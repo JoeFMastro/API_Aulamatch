@@ -120,6 +120,7 @@ export default function Asignaciones() {
             className="btn btn-primary"
             onClick={handleAutomatica}
             disabled={running}
+            title="El asignador automático omite comisiones en CONFLICTO por diseño. Resolvelas manualmente."
           >
             {running ? '⏳ Procesando...' : '⚡ Asignar automáticamente'}
           </button>

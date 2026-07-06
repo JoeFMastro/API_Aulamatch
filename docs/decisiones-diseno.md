@@ -209,3 +209,19 @@ Se decidió intencionalmente mantener un **filtro estricto** en esta lista: solo
 ### Justificación
 
 Si la lista de aulas devuelve vacío, se notifica claramente al usuario que "No hay aulas compatibles disponibles para este cupo y horario". En este MVP, no se incluyó un mecanismo de flexibilización por interfaz (ej. "forzar aula ignorando el cupo"); los conflictos complejos donde la capacidad física no da abasto quedan explícitamente sin resolver mediante esta vía de asistencia, priorizando la consistencia y las reglas de negocio base establecidas en la Actividad 4.
+
+---
+
+## 10. Inclusión de Horario en Listado de Conflictos
+
+### Ambigüedad Original
+
+La UI de resolución de conflictos de la Actividad 4 contemplaba mostrar información contextual del problema, pero el endpoint `GET /api/conflictos` no incluía la banda horaria de la comisión, forzando al usuario a resolver el conflicto "a ciegas" respecto del día y la hora de la clase.
+
+### Implementación Real
+
+Se modificó el endpoint de listado de conflictos para devolver de forma aditiva el campo `horario`. Para evitar generar productos cartesianos (multiplicación de filas de conflictos debido a comisiones con más de una banda horaria), se resolvió implementando una subquery escalar `SELECT string_agg(...)` directo en la lista de proyección (SELECT) de la query principal en `backend/src/modules/conflictos/service.js`.
+
+### Justificación
+
+Este approach mantiene la semántica de "un conflicto por fila" y respeta la agregación existente (`GROUP BY`), mientras expone el string legible del horario (ej. `LU 14:00-16:00, MI 14:00-16:00`) que el frontend ahora renderiza en la tabla, clarificando enormemente el contexto para la resolución manual.

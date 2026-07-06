@@ -8,6 +8,18 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.1] — 2026-07-06 · Fix: Reasignación en panel de conflictos y mejoras de UI
+
+### Corregido
+- **Frontend**: Resuelto el error `el parámetro "id" debe ser un entero positivo` al confirmar reasignación en el Panel de Conflictos. Se corrigió el uso de la propiedad `asignacion_id` en lugar de un `id` undefined proveniente del listado.
+
+### Agregado
+- **Backend**: El endpoint de listar conflictos (`GET /api/conflictos`) ahora devuelve el campo `horario` consolidado.
+- **Frontend**: La tabla de conflictos muestra visiblemente la columna de horario de cursada.
+- **Frontend**: Mensaje informativo agregado explícitamente en el Panel de Conflictos y Asignaciones clarificando que el motor de auto-asignación omite las comisiones conflictivas por diseño.
+
+---
+
 ## [v1.12] — 2026-07-06 · Feat: Selector Inteligente de Aulas Compatibles
 
 ### Agregado

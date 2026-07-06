@@ -67,7 +67,8 @@ export default function Conflictos() {
     if (!nuevoAulaId || !selected) return
     setResolving(true)
     try {
-      await api.updateAsignacion(selected.id, Number(nuevoAulaId))
+      const asignacionId = selected.asignacion_id || selected.id
+      await api.updateAsignacion(asignacionId, Number(nuevoAulaId))
       setSelected(null)
       setNuevoAulaId('')
       cargar()
@@ -144,6 +145,9 @@ export default function Conflictos() {
           </div>
 
           <div className="table-wrapper" style={{ borderRadius: '0', border: 'none' }}>
+            <div className="alert alert-info" style={{ marginBottom: '16px', fontSize: '13px', background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
+              ℹ️ <strong>Nota:</strong> El asignador automático no modifica comisiones en conflicto por diseño. Resolvelas manualmente con el botón Resolver.
+            </div>
             {loading ? (
               <LoadingSpinner text="Detectando conflictos..." />
             ) : conflictos.length === 0 ? (
@@ -161,7 +165,8 @@ export default function Conflictos() {
                     <th>Comisión</th>
                     <th>Materia</th>
                     <th>Docente</th>
-                    <th>Aula actual</th>
+                    <th>Horario</th>
+                    <th>Aula act.</th>
                     <th>Cupo / Capacidad</th>
                     <th>Estado</th>
                     <th></th>
@@ -172,11 +177,13 @@ export default function Conflictos() {
                     const comision = c.comision || c
                     const aula = c.aula
                     const tipo = tipoConflicto(c)
-                    const isSelected = selected?.id === c.id
+                    const cId = c.asignacion_id || c.id
+                    const sId = selected?.asignacion_id || selected?.id
+                    const isSelected = sId === cId
 
                     return (
                       <tr
-                        key={c.id}
+                        key={cId}
                         style={{
                           background: isSelected ? '#FEF2F2' : undefined,
                           cursor: 'pointer',
@@ -184,7 +191,7 @@ export default function Conflictos() {
                         onClick={() => setSelected(isSelected ? null : c)}
                         title="Clic para resolver este conflicto"
                       >
-                        <td className="td-code">#{c.id}</td>
+                        <td className="td-code">#{cId}</td>
                         <td>
                           <span
                             className={`badge ${
@@ -205,6 +212,9 @@ export default function Conflictos() {
                           {c.docente_nombre || (comision.docente
                             ? `${comision.docente.apellido}, ${comision.docente.nombre}`
                             : '—')}
+                        </td>
+                        <td className="td-muted" style={{ fontSize: '12px' }}>
+                          {c.horario || '—'}
                         </td>
                         <td style={{ fontWeight: 500 }}>
                           {c.aula_numero || (aula ? aula.numero : '—')}
@@ -250,7 +260,7 @@ export default function Conflictos() {
               {/* Info del conflicto */}
               <div className="card card-sm" style={{ background: '#FEF2F2', borderColor: '#FECACA' }}>
                 <div style={{ fontSize: '12px', fontWeight: 600, color: '#DC2626', marginBottom: '6px' }}>
-                  Conflicto #{selected.id}
+                  Conflicto #{selected.asignacion_id || selected.id}
                 </div>
                 <div style={{ fontSize: '13px' }}>
                   <strong>{selected.comision_codigo || (selected.comision || selected).codigo}</strong>
