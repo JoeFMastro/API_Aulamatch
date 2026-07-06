@@ -113,7 +113,7 @@ describe('Módulo de Reportes', () => {
       expect(csvText.charCodeAt(0)).toBe(0xFEFF);
 
       // Verificar la cabecera del CSV
-      expect(csvText).toContain('comision_codigo,materia_nombre,carreras');
+      expect(csvText).toContain('comision_codigo;materia_nombre;carreras');
       expect(csvText).toContain('C1_HAPPY');
       expect(csvText).toContain('Lun 08:00-12:00');
     });

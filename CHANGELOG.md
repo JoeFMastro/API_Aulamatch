@@ -8,6 +8,13 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.4] — 2026-07-06 · Fix(reportes): Corregir parser de CSV en tests de integración
+
+### Corregido
+- **Backend (Tests)**: Se actualizó el test de integración de `GET /api/reportes/asignaciones?formato=csv` (`tests/reportes.test.js`) que presentaba un falso positivo. El test esperaba erróneamente columnas separadas por comas (`,`), pero la lógica de exportación en `reportes/controller.js` utiliza punto y coma (`;`) para mayor compatibilidad con Excel (BOM issue ya abordado en el proyecto). El test ahora refleja fielmente el comportamiento real.
+
+---
+
 ## [v1.12.3] — 2026-07-06 · Refactor: Estandarizar campo id en GET /api/conflictos, deprecar asignacion_id
 
 ### Modificado
