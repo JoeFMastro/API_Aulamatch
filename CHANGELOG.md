@@ -8,6 +8,20 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.10] — 2026-07-06 · Implementación del Frontend (React + Vite)
+
+### Agregado
+
+- **`frontend/`** — Nuevo directorio en la raíz con el proyecto frontend completo.
+  - Implementado en React 19 + Vite 6 + React Router v7.
+  - Diseño visual fiel al PDF `Actividad4_Joel_Mastroiaco_Completo.pdf` (colores, tipografía Inter, badges semánticos, cards métricas).
+  - Integración completa con la API en producción (vía `VITE_API_URL` y contrato Swagger).
+  - 5 pantallas funcionales: Login, Asignaciones (Dashboard), Conflictos, Reportes y Perfil.
+  - Autenticación con JWT persistente en `localStorage`.
+- **`docs/guia-frontend.md`** — Documentación detallada sobre cómo levantar el frontend, configuración de entorno y su relación con el diseño original.
+
+---
+
 ## [v1.9] — 2026-07-06 · Auditoría y actualización completa de documentación post-deploy
 
 ### Modificado
