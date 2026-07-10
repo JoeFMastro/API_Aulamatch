@@ -343,11 +343,12 @@ export default function Administracion() {
 
   return (
     <Layout title="Administración de Entidades" subtitle="Gestión de catálogos y entidades maestras">
-      <div className="tabs tabs-boxed mb-6 bg-base-100/50 p-2 rounded-lg shadow-sm">
+      <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-100/50 p-2 rounded-lg shadow-sm overflow-x-auto flex-nowrap">
         {tabs.map(tab => (
           <a
+            role="tab"
             key={tab}
-            className={`tab tab-lg ${activeTab === tab ? 'tab-active bg-primary text-white font-bold' : ''}`}
+            className={`tab tab-lg whitespace-nowrap cursor-pointer ${activeTab === tab ? 'tab-active bg-primary text-white font-bold' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
