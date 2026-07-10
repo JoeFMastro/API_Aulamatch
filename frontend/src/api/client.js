@@ -70,7 +70,7 @@ export const api = {
   updateAsignacion: (id, aula_id) =>
     request(`/asignaciones/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ aula_id }),
+      body: JSON.stringify({ aula_id, estado: 'ASIGNADA' }),
     }),
   getAulasCompatibles: (comisionId) =>
     request(`/asignaciones/${comisionId}/aulas-compatibles`),
