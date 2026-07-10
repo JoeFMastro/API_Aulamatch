@@ -97,7 +97,9 @@ API_Aulamatch/
 │   ├── decisiones-diseno.md       # Desviaciones justificadas respecto al diseño original
 │   ├── guia-desarrollo-local.md   # Guía detallada de setup local
 │   ├── guia-deploy-render.md      # Guía paso a paso para deploy en Render
-│   ├── auditoria-2026-06-28.md    # Auditoría de production-readiness pre-deploy
+│   ├── guia-evaluacion.md         # Guía interactiva para el evaluador (Swagger UI)
+│   ├── guia-frontend.md           # Arquitectura y setup del frontend React
+│   ├── vision-futura.md           # Extensión IA propuesta por el evaluador
 │   └── Actividad4_Joel_Mastroiaco_Completo.pdf  # Documento académico completo (diseño + decisiones)
 ├── CHANGELOG.md             # Historial de versiones con decisiones técnicas por iteración
 ├── .env.example             # Plantilla de variables de entorno (copiar a .env)
@@ -145,7 +147,7 @@ Abrí el archivo `.env` y completá como mínimo:
 docker compose -f deploy/docker-compose.yml up --build
 ```
 
-El servicio `backend` espera automáticamente a que la base de datos supere el healthcheck antes de arrancar. Los scripts SQL de `deploy/init-db/` se ejecutan en orden al crear el contenedor por primera vez.
+El servicio `backend` espera automáticamente a que la base de datos supere el healthcheck antes de arrancar. Las migraciones SQL se aplican manualmente con `npm run migrate` (ver [guia-desarrollo-local.md](docs/guia-desarrollo-local.md)).
 
 ### 4. Verificar que todo funciona
 
@@ -286,10 +288,12 @@ Time:        ~4s
 | Archivo | Contenido |
 |---|---|
 | [`docs/diseño-original.md`](docs/diseño-original.md) | Modelo de dominio completo: diagrama de clases, esquema de tablas, especificación de endpoints y casos de uso. |
-| [`docs/decisiones-diseno.md`](docs/decisiones-diseno.md) | Desviaciones justificadas respecto al modelo original (permisos de roles, representación visual de estados, mecanismo de notificaciones stateless). |
+| [`docs/decisiones-diseno.md`](docs/decisiones-diseno.md) | Desviaciones justificadas respecto al modelo original (permisos de roles, representación visual de estados, mecanismo de notificaciones). |
 | [`docs/guia-desarrollo-local.md`](docs/guia-desarrollo-local.md) | Guía extendida de setup local con casos de borde (puertos ocupados, troubleshooting). |
 | [`docs/guia-deploy-render.md`](docs/guia-deploy-render.md) | Instrucciones paso a paso para desplegar en Render (PostgreSQL + Web Service). |
-| [`docs/auditoria-2026-06-28.md`](docs/auditoria-2026-06-28.md) | Auditoría de production-readiness: revisión de CORS, SSL, manejo de errores, secrets y bloqueantes resueltos. |
+| [`docs/guia-evaluacion.md`](docs/guia-evaluacion.md) | Guía interactiva para el evaluador: cómo autenticarse y recorrer todos los flujos desde Swagger UI. |
+| [`docs/guia-frontend.md`](docs/guia-frontend.md) | Arquitectura del frontend React: pantallas implementadas, paleta de colores, estructura del proyecto. |
+| [`docs/vision-futura.md`](docs/vision-futura.md) | Extensión IA propuesta por el evaluador: arquitectura MCP + agente LLM sobre la API REST existente. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Historial completo de versiones (v1.0 → v1.6) con decisiones técnicas registradas por iteración. |
 | [`docs/Actividad4_Joel_Mastroiaco_Completo.pdf`](docs/Actividad4_Joel_Mastroiaco_Completo.pdf) | Documento académico completo: diseño, wireframes, pseudocódigo, trazabilidad y justificaciones. |
 

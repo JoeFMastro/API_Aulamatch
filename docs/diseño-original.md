@@ -353,5 +353,5 @@ Resumen de las principales desviaciones registradas:
 | Sección 2 — dark mode | Diseño final en modo claro (fondo `#F7F8FC`) en vez de dark mode | [decisiones-diseno.md §3](decisiones-diseno.md) |
 | Sección 10.6 — tabla notificaciones | Implementada (existe en `03_notificaciones.sql`); no stateless como se propuso | [decisiones-diseno.md §4](decisiones-diseno.md) |
 | Sección 8 (Ambigüedad 2) — `inferirTipoAula` | Regla propia: VIRTUAL→SALA_VC, PRACTICA→LAB, ≥80 inscriptos→AUDITORIO | [CHANGELOG v1.4](../CHANGELOG.md) |
-| Sección 9 — rutas SQL | Movidas de `deploy/init-db/` a `backend/sql/` (resuelto en fix pre-deploy) | [re-auditoria-2026-06-28.md](re-auditoria-2026-06-28.md) |
+| Sección 9 — rutas SQL | Movidas de `deploy/init-db/` a `backend/sql/` (resuelto en fix pre-deploy) | [decisiones-diseno.md §12](decisiones-diseno.md) |
 | Sección 5 — campo login | Se usa `email` (no `username`) como identificador de login | [`02_usuarios.sql`](../backend/sql/02_usuarios.sql) |

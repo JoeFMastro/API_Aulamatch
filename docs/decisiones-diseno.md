@@ -240,3 +240,20 @@ Antes de modificar el contrato, se auditó la consulta SQL base en `backend/src/
 1. **Cambio aditivo:** Se modificó la consulta para devolver `a.id AS id` manteniendo en paralelo `a.id AS asignacion_id` por estricta retrocompatibilidad.
 2. **Migración:** El frontend fue refactorizado para consumir exclusivamente `id`, eliminando todos los fallbacks lógicos en `Conflictos.jsx`.
 3. **Deprecación:** `asignacion_id` queda marcado formalmente como **deprecado**. Se mantendrá en la respuesta de la API temporalmente, y podrá ser eliminado de forma segura en una próxima versión mayor una vez que se corrobore la ausencia de consumidores heredados.
+
+---
+
+## 12. Unicidad de `comision_id` en la tabla `asignacion`
+
+### Observación de Diseño
+
+El esquema relacional de `asignacion` no incluye un constraint `UNIQUE (comision_id)`, lo que técnicamente permitiría múltiples asignaciones activas para la misma comisión a nivel de base de datos.
+
+### Decisión Adoptada
+
+La unicidad de la relación Comisión ↔ Asignación se maneja en la **capa de negocio** en lugar de en un constraint de base de datos. El servicio de asignaciones verifica que una comisión no tenga una asignación previa antes de crear una nueva. Esta decisión es intencional:
+
+1. **Flexibilidad de historial:** Permite conservar registros históricos de reasignaciones sin violar restricciones de base de datos (una comisión puede haber tenido múltiples asignaciones a lo largo del tiempo si se reasignó manualmente).
+2. **Control semántico:** La lógica de negocio determina qué constituye una "asignación activa", lo que es más expresivo que un simple constraint `UNIQUE` que no distinguiría entre estados.
+
+Si en el futuro se decide agregar el constraint a nivel de base de datos, se debe acompañar con una migración que garantice la ausencia de duplicados existentes y una redefinición del concepto de historial de asignaciones.
