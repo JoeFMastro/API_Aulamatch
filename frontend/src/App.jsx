@@ -5,6 +5,7 @@ import Asignaciones from './pages/Asignaciones'
 import Conflictos from './pages/Conflictos'
 import Reportes from './pages/Reportes'
 import Perfil from './pages/Perfil'
+import Administracion from './pages/Administracion'
 
 /** Ruta protegida: redirige a /login si no hay token */
 function ProtectedRoute({ children }) {
@@ -60,6 +61,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Perfil />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/administracion"
+        element={
+          <ProtectedRoute>
+            <Administracion />
           </ProtectedRoute>
         }
       />

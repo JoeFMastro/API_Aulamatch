@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/asignaciones', icon: '📋', label: 'Asignaciones' },
   { to: '/conflictos',   icon: '⚠️',  label: 'Conflictos', showBadge: true },
   { to: '/reportes',     icon: '📊', label: 'Reportes' },
+  { to: '/administracion', icon: '⚙️', label: 'Administración' },
   { to: '/perfil',       icon: '👤', label: 'Perfil' },
 ]
 

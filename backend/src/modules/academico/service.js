@@ -354,6 +354,51 @@ async function crearComision(datos) {
   return rows[0];
 }
 
+async function crearCarrera({ nombre, codigo, unidad_academica_id }) {
+  if (!nombre || !codigo || !unidad_academica_id) {
+    const err = new Error('Faltan campos obligatorios: nombre, codigo, unidad_academica_id');
+    err.status = 400;
+    throw err;
+  }
+  const { rows } = await db.query(
+    `INSERT INTO carrera (nombre, codigo, unidad_academica_id)
+     VALUES ($1, $2, $3)
+     RETURNING id, nombre, codigo, unidad_academica_id`,
+    [nombre.trim(), codigo.trim(), Number(unidad_academica_id)]
+  );
+  return rows[0];
+}
+
+async function crearMateria({ nombre, codigo, unidad_academica_id }) {
+  if (!nombre || !codigo || !unidad_academica_id) {
+    const err = new Error('Faltan campos obligatorios: nombre, codigo, unidad_academica_id');
+    err.status = 400;
+    throw err;
+  }
+  const { rows } = await db.query(
+    `INSERT INTO materia (nombre, codigo, unidad_academica_id)
+     VALUES ($1, $2, $3)
+     RETURNING id, nombre, codigo, unidad_academica_id`,
+    [nombre.trim(), codigo.trim(), Number(unidad_academica_id)]
+  );
+  return rows[0];
+}
+
+async function crearDocente({ nombre, apellido, email }) {
+  if (!nombre || !apellido || !email) {
+    const err = new Error('Faltan campos obligatorios: nombre, apellido, email');
+    err.status = 400;
+    throw err;
+  }
+  const { rows } = await db.query(
+    `INSERT INTO docente (nombre, apellido, email)
+     VALUES ($1, $2, $3)
+     RETURNING id, nombre, apellido, email`,
+    [nombre.trim(), apellido.trim(), email.trim()]
+  );
+  return rows[0];
+}
+
 module.exports = {
   listarUnidadesAcademicas,
   listarCarreras,
@@ -361,4 +406,7 @@ module.exports = {
   listarDocentes,
   listarComisiones,
   crearComision,
+  crearCarrera,
+  crearMateria,
+  crearDocente,
 };

@@ -95,6 +95,27 @@ export const api = {
   health: () => request('/health'),
   resetDb: () => request('/health/reset-db', { method: 'POST' }),
 
-  // Aulas / Edificios — aunque no en Swagger, el backend los expone
+  // ─────────────────────────────────────────────────────────
+  // ADMINISTRACIÓN (Catálogos)
+  // ─────────────────────────────────────────────────────────
   getEdificios: () => request('/edificios').catch(() => []),
+  crearEdificio: (data) => request('/edificios', { method: 'POST', body: JSON.stringify(data) }),
+  
+  getAulas: () => request('/aulas').catch(() => []),
+  crearAula: (data) => request('/aulas', { method: 'POST', body: JSON.stringify(data) }),
+
+  getComisiones: (params = {}) => {
+    const qs = new URLSearchParams(params).toString()
+    return request(`/comisiones${qs ? `?${qs}` : ''}`).catch(() => [])
+  },
+  crearComision: (data) => request('/comisiones', { method: 'POST', body: JSON.stringify(data) }),
+
+  getMaterias: () => request('/materias').catch(() => []),
+  crearMateria: (data) => request('/materias', { method: 'POST', body: JSON.stringify(data) }),
+
+  getCarreras: () => request('/carreras').catch(() => []),
+  crearCarrera: (data) => request('/carreras', { method: 'POST', body: JSON.stringify(data) }),
+
+  getDocentes: () => request('/docentes').catch(() => []),
+  crearDocente: (data) => request('/docentes', { method: 'POST', body: JSON.stringify(data) }),
 }

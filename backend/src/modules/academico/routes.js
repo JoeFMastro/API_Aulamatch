@@ -98,4 +98,37 @@ router.get(
   ctrl.listarDocentes
 );
 
+/**
+ * POST /api/carreras
+ * Registra una carrera nueva.
+ */
+router.post(
+  '/carreras',
+  authenticate,
+  authorize(AMBOS),
+  ctrl.crearCarrera
+);
+
+/**
+ * POST /api/materias
+ * Registra una materia nueva.
+ */
+router.post(
+  '/materias',
+  authenticate,
+  authorize(AMBOS),
+  ctrl.crearMateria
+);
+
+/**
+ * POST /api/docentes
+ * Registra un docente nuevo.
+ */
+router.post(
+  '/docentes',
+  authenticate,
+  authorize(AMBOS),
+  ctrl.crearDocente
+);
+
 module.exports = router;

@@ -174,6 +174,33 @@ async function crearComision(req, res, next) {
   }
 }
 
+async function crearCarrera(req, res, next) {
+  try {
+    const carrera = await service.crearCarrera(req.body);
+    res.status(201).json(carrera);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function crearMateria(req, res, next) {
+  try {
+    const materia = await service.crearMateria(req.body);
+    res.status(201).json(materia);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function crearDocente(req, res, next) {
+  try {
+    const docente = await service.crearDocente(req.body);
+    res.status(201).json(docente);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   listarUAs,
   listarCarreras,
@@ -181,4 +208,7 @@ module.exports = {
   listarDocentes,
   listarComisiones,
   crearComision,
+  crearCarrera,
+  crearMateria,
+  crearDocente,
 };
