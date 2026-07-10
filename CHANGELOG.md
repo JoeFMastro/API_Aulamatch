@@ -8,6 +8,27 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.6] — 2026-07-10 · Test: Ampliar cobertura de asignación manual y auditar patrones de bug
+
+### Añadido
+- **Tests** (`backend/tests/asignacion_manual.test.js`): 25 tests de integración nuevos cubriendo:
+  - `PATCH /api/asignaciones/:id`: aula válida, aula inexistente, conflicto horario, asignación inexistente, sin campos.
+  - `GET /api/asignaciones/:comisionId/aulas-compatibles`: aulas disponibles, sin aulas (C3_SIN_AULA), autenticación.
+  - `GET /api/conflictos`: sin conflictos, con conflictos, horario un bloque, horario múltiples bloques, campo `id` estandarizado.
+  - Flujo completo de resolución de conflicto (POST → GET compatibles → PATCH → verificar notificaciones atendidas).
+  - `POST /api/asignaciones/automatica`: período sin comisiones, período inválido, segunda ejecución idempotente.
+  - `GET /api/asignaciones`: docente_nombre, carrera_nombre (json_agg).
+  - `GET /api/conflictos/metricas`: estructura y contadores.
+- **Documentación** (`docs/auditoria-2026-07-10.md`): Auditoría completa de todos los módulos backend y páginas frontend con 11 hallazgos (3 bugs reales, 8 observaciones menores).
+
+### Hallazgos de Auditoría (sin corrección en esta tarea)
+- **HAL-01** [Bug Real] `GET /api/conflictos` devuelve 500 por `LEFT()` sobre ENUM — corrección en tarea separada.
+- **HAL-02** [Bug Real] Motor automático retoma comisiones en CONFLICTO por filtro incompleto (`NOT EXISTS` solo filtra `ASIGNADA`, no `CONFLICTO`).
+- **HAL-03** [Obs. Menor] `SELECT a.*` en `actualizarAsignacion` — patrón frágil pero actualmente inofensivo.
+- **HAL-08** [Bug Real] UI de Conflictos muestra error y estado vacío simultáneamente — corrección en tarea separada.
+
+---
+
 ## [v1.12.5] — 2026-07-06 · Fix(conflictos): Error 500 por tipo de dato en LEFT() y estado UI contradictorio
 
 ### Corregido
