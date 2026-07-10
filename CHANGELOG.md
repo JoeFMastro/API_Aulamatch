@@ -8,6 +8,17 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.8] — 2026-07-10 · Fix: botón de asignación automática no respondía correctamente
+
+### Corregido
+- **Frontend** (`frontend/src/pages/Asignaciones.jsx`):
+  - Se diagnosticó y corrigió la causa raíz por la cual el botón "Asignar automáticamente" no daba feedback visual e interrumpía silenciosamente la UI (crash de React en background).
+  - La falla residía exclusivamente en la capa de frontend: al leer la respuesta `runResult` devuelta por el backend (`POST /api/asignaciones/automatica`), la interpolación en JSX referenciaba a `runResult.asignadas` (el cual es un array `[]` vacío o un array de objetos) en lugar de usar la clave correcta `runResult.resumen.asignadas` (un número entero). 
+  - Al recibir un array de objetos, React arrojaba un error crítico ("Objects are not valid as a React child") bloqueando el renderizado de la notificación de éxito.
+  - El backend se auditó y funcionaba perfectamente (retornando `200 OK` y asignando las comisiones disponibles) respetando la restricción de ignorar comisiones en conflicto. No hizo falta realizar ninguna corrección en la capa de base de datos.
+  
+---
+
 ## [v1.12.7] — 2026-07-10 · Fix: Resolver inconsistencia de estado en Panel de Conflictos
 
 ### Corregido

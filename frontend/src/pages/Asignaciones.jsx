@@ -130,9 +130,8 @@ export default function Asignaciones() {
       {/* Resultado del motor automático */}
       {runResult && (
         <div className="alert alert-success mb-16">
-          ✅ Motor ejecutado — {runResult.asignadas ?? 0} asignadas,{' '}
-          {runResult.pendientes ?? 0} pendientes,{' '}
-          {runResult.fallidas ?? 0} fallidas.
+          ✅ Motor ejecutado — {runResult.resumen?.asignadas ?? 0} asignadas,{' '}
+          {runResult.resumen?.fallidas ?? 0} pendientes.
         </div>
       )}
 
