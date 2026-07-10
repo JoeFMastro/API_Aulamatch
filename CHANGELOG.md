@@ -8,6 +8,17 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.12.7] — 2026-07-10 · Fix: Resolver inconsistencia de estado en Panel de Conflictos
+
+### Corregido
+- **Frontend** (`frontend/src/pages/Conflictos.jsx`):
+  - Añadido `setMetricas(null)` en el bloque `catch` de `cargar()` para limpiar las métricas previas cuando falla la carga. Esto corrige el bug visual donde se mostraban contadores activos en las cards simultáneamente con un banner de error, provocando una contradicción visual para el usuario.
+- **Diagnóstico de Producción**:
+  - Se confirmó mediante llamadas en tiempo real con Swagger UI/curl a `GET /api/conflictos` y `GET /api/conflictos/metricas` en `https://aulamatch-backend.onrender.com` que el backend **no está arrojando errores 500** y el fix anterior de `LEFT(bh.dia::text, 2)` está desplegado y funcionando correctamente (respondiendo HTTP 200 OK).
+  - El error persistente visualizado fue producto de (1) la falta de limpieza de métricas y (2) que el usuario observó el panel en la ventana de tiempo en la que el backend aún estaba desplegándose en Render, o conservaba un bundle de frontend en caché.
+
+---
+
 ## [v1.12.6] — 2026-07-10 · Test: Ampliar cobertura de asignación manual y auditar patrones de bug
 
 ### Añadido

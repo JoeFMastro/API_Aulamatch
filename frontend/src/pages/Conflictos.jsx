@@ -36,6 +36,8 @@ export default function Conflictos() {
       setConflictos(Array.isArray(conf) ? conf : conf.conflictos || [])
       setMetricas(met)
     } catch (err) {
+      setConflictos([])
+      setMetricas(null)
       setError(err.message)
     } finally {
       setLoading(false)
