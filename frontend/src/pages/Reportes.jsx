@@ -281,10 +281,14 @@ export default function Reportes() {
                               </div>
                             </td>
                             <td style={{ color: '#16A34A', fontWeight: 600 }}>
-                              {aula.bloques_libres ?? '—'}
+                              {Array.isArray(aula.bloques_libres)
+                                ? aula.bloques_libres.length
+                                : aula.bloques_libres ?? '—'}
                             </td>
                             <td style={{ color: '#CA8A04', fontWeight: 600 }}>
-                              {aula.bloques_ocupados ?? '—'}
+                              {Array.isArray(aula.bloques_ocupados)
+                                ? aula.bloques_ocupados.length
+                                : aula.bloques_ocupados ?? '—'}
                             </td>
                           </tr>
                         )

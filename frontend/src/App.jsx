@@ -6,6 +6,7 @@ import Conflictos from './pages/Conflictos'
 import Reportes from './pages/Reportes'
 import Perfil from './pages/Perfil'
 import Administracion from './pages/Administracion'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 /** Ruta protegida: redirige a /login si no hay token */
 function ProtectedRoute({ children }) {
@@ -83,7 +84,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   )
