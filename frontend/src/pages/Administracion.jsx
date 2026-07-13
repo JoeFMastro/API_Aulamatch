@@ -6,7 +6,7 @@ import { api } from '../api/client'
 
 // ─── Configuración de tabs ────────────────────────────────────────────────────
 
-const TABS = ['Edificios', 'Aulas', 'Carreras', 'Materias', 'Docentes', 'Comisiones']
+const TABS = ['Edificios', 'Aulas', 'Carreras', 'Materias', 'Docentes', 'Comisiones', 'Asignaciones']
 
 // ─── Hook genérico de CRUD ────────────────────────────────────────────────────
 
@@ -118,6 +118,8 @@ function useAdminConfig() {
   const [carreras, setCarreras] = useState([])
   const [materias, setMaterias] = useState([])
   const [docentes, setDocentes] = useState([])
+  const [comisiones, setComisiones] = useState([])
+  const [aulas, setAulas] = useState([])
 
   const loadConfig = useCallback(() => {
     api.getEdificios().then(setEdificios).catch(() => {})
@@ -125,6 +127,8 @@ function useAdminConfig() {
     api.getCarreras().then(setCarreras).catch(() => {})
     api.getMaterias().then(setMaterias).catch(() => {})
     api.getDocentes().then(setDocentes).catch(() => {})
+    api.getComisiones().then(setComisiones).catch(() => {})
+    api.getAulas().then(setAulas).catch(() => {})
   }, [])
 
   useEffect(() => { loadConfig() }, [loadConfig])
@@ -269,6 +273,38 @@ function useAdminConfig() {
       deleter: api.eliminarComision,
       formTitle: 'Comisión',
       emptyMsg: 'No hay comisiones registradas',
+    },
+    asignaciones: {
+      columns: [
+        { key: 'id', label: 'ID' },
+        { key: 'comision_codigo', label: 'Comisión' },
+        { key: 'aula_numero', label: 'Aula' },
+        { key: 'turno', label: 'Turno' },
+        { key: 'estado', label: 'Estado', render: (val) => {
+            let cls = 'badge-neutral'
+            if (val === 'ASIGNADA') cls = 'badge-success'
+            else if (val === 'CONFLICTO') cls = 'badge-error'
+            else if (val === 'PENDIENTE') cls = 'badge-warning'
+            return <span className={`badge ${cls}`}>{val}</span>
+        }},
+        { key: 'es_manual', label: 'Origen', render: (val) => val ? 'Manual' : 'Auto' },
+      ],
+      fields: [
+        { key: 'comision_id', label: 'Comisión', type: 'select', required: true,
+          options: comisiones.map(c => ({ value: String(c.id), label: `${c.codigo} (${c.materia_nombre} - ${c.turno}) - Inscriptos: ${c.inscriptos}` })) },
+        { key: 'aula_id', label: 'Aula', type: 'select', required: true,
+          options: aulas.map(a => ({ value: String(a.id), label: `${a.numero} (Cap: ${a.capacidad}) - ${a.edificio_nombre}` })) },
+        { key: 'estado', label: 'Estado', type: 'select', required: false,
+          options: [{value: 'PENDIENTE', label: 'PENDIENTE'}, {value: 'ASIGNADA', label: 'ASIGNADA'}, {value: 'CONFLICTO', label: 'CONFLICTO'}],
+          placeholder: 'Dejar vacío para ASIGNADA por defecto' },
+      ],
+      getter: api.getAsignaciones,
+      creator: api.crearAsignacion,
+      updater: api.editarAsignacion,
+      deleter: api.eliminarAsignacion,
+      formTitle: 'Asignación',
+      emptyMsg: 'No hay asignaciones',
+      onSaved: loadConfig,
     },
   }
   return { config, reloadConfig: loadConfig }

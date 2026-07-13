@@ -76,6 +76,9 @@ export const api = {
     request(`/asignaciones/${comisionId}/aulas-compatibles`),
   deleteAsignacion: (id) =>
     request(`/asignaciones/${id}`, { method: 'DELETE' }),
+  crearAsignacion: (data) => request('/asignaciones', { method: 'POST', body: JSON.stringify(data) }),
+  editarAsignacion: (id, data) => request(`/asignaciones/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  eliminarAsignacion: (id) => request(`/asignaciones/${id}`, { method: 'DELETE' }),
 
   // Conflictos
   getConflictos: () => request('/conflictos'),

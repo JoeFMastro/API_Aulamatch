@@ -544,7 +544,18 @@ async function crearAsignacionManual({ comision_id, aula_id }) {
   const superposicion = await existeSuperposicion(Number(aula_id), bandas);
   if (superposicion) {
     const err = new Error(
-      'El aula seleccionada ya tiene una asignación en ese horario. Elija otra aula.'
+      'Superposición horaria: El aula seleccionada ya tiene una asignación en ese horario. Elija otra aula.'
+    );
+    err.status = 409;
+    throw err;
+  }
+
+  // Verificar cupo (capacidad vs inscriptos)
+  const { rows: [aula] } = await db.query('SELECT capacidad FROM aula WHERE id=$1', [Number(aula_id)]);
+  const { rows: [comision] } = await db.query('SELECT inscriptos FROM comision WHERE id=$1', [Number(comision_id)]);
+  if (aula.capacidad < comision.inscriptos) {
+    const err = new Error(
+      `Conflicto de cupo: El aula tiene capacidad para ${aula.capacidad}, pero la comisión tiene ${comision.inscriptos} inscriptos.`
     );
     err.status = 409;
     throw err;
