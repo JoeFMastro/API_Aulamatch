@@ -558,19 +558,14 @@ async function crearAsignacionManual({ comision_id, aula_id }) {
   // Verificar cupo (capacidad vs inscriptos)
   const { rows: [aula] } = await db.query('SELECT capacidad FROM aula WHERE id=$1', [Number(aula_id)]);
   const { rows: [comision] } = await db.query('SELECT inscriptos FROM comision WHERE id=$1', [Number(comision_id)]);
-  if (aula.capacidad < comision.inscriptos) {
-    const err = new Error(
-      `Conflicto de cupo: El aula tiene capacidad para ${aula.capacidad}, pero la comisión tiene ${comision.inscriptos} inscriptos.`
-    );
-    err.status = 409;
-    throw err;
-  }
+  
+  const estadoAsignacion = aula.capacidad < comision.inscriptos ? 'CONFLICTO' : 'ASIGNADA';
 
   const { rows: [asignacion] } = await db.query(
     `INSERT INTO asignacion (estado, es_manual, comision_id, aula_id, fecha_asignacion)
-     VALUES ('ASIGNADA', true, $1, $2, NOW())
+     VALUES ($3, true, $1, $2, NOW())
      RETURNING id, estado, es_manual, comision_id, aula_id, fecha_asignacion`,
-    [Number(comision_id), Number(aula_id)]
+    [Number(comision_id), Number(aula_id), estadoAsignacion]
   );
 
   // ── Detección de conflictos post-inserción (momento 1: asignación manual) ──
