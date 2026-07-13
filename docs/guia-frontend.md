@@ -201,3 +201,12 @@ frontend/
         ├── Reportes.jsx    # Extensión (sin wireframe en PDF)
         └── Perfil.jsx      # Pantallas 4a/4b (Figuras 4a/4b PDF)
 ```
+
+## Troubleshooting: Errores Comunes
+
+### Error "Failed to fetch"
+Si al iniciar la aplicación en entorno local aparece un banner rojo indicando "Failed to fetch" con todos los contadores en 0, revisá en el siguiente orden:
+
+1. **Configuración de .env:** Verificá que exista el archivo `frontend/.env` y que la variable `VITE_API_URL` apunte al entorno correcto. Si estás probando contra producción, debe ser `https://aulamatch-backend.onrender.com`. Si probás contra un servidor local que no está encendido o apunta al puerto incorrecto, todas las peticiones fallarán.
+2. **Cold Start de Render:** Si apuntas a producción y recibís el error, podría deberse a que el plan gratuito de Render pone a "dormir" el backend tras periodos de inactividad. La primera petición puede fallar por timeout. Probá entrar a `https://aulamatch-backend.onrender.com/api/health` desde el navegador para "despertarlo".
+3. **CORS:** Render tiene el CORS abierto por defecto. Si esto cambia (mediante la variable `ALLOWED_ORIGINS`), el dashboard de Render deberá incluir tu origen (`http://localhost:5173`).
