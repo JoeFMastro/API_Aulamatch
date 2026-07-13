@@ -6,76 +6,22 @@ const authenticate = require('../../middlewares/authenticate');
 const authorize    = require('../../middlewares/authorize');
 
 const router = Router();
+const AMBOS  = ['COORDINADOR', 'ADMINISTRATIVO'];
+const COORD  = ['COORDINADOR'];
 
-// ─────────────────────────────────────────────────────────────
-// EDIFICIOS — montado bajo /api (ver app.js)
-// ─────────────────────────────────────────────────────────────
+// ─── EDIFICIOS ───────────────────────────────────────────────────────────
+router.get('/edificios',            authenticate, authorize(AMBOS), ctrl.listarEdificios);
+router.post('/edificios',           authenticate, authorize(COORD), ctrl.crearEdificio);
+router.patch('/edificios/:id',      authenticate, authorize(COORD), ctrl.actualizarEdificio);
+router.delete('/edificios/:id',     authenticate, authorize(COORD), ctrl.eliminarEdificio);
 
-/**
- * GET /api/edificios
- * Lista todos los edificios.
- * Acceso: COORDINADOR, ADMINISTRATIVO
- */
-router.get(
-  '/edificios',
-  authenticate,
-  authorize(['COORDINADOR', 'ADMINISTRATIVO']),
-  ctrl.listarEdificios
-);
+// ─── AULAS ───────────────────────────────────────────────────────────────
+router.get('/aulas',                authenticate, authorize(AMBOS), ctrl.listarAulas);
+router.post('/aulas',               authenticate, authorize(COORD), ctrl.crearAula);
+router.patch('/aulas/:id',          authenticate, authorize(COORD), ctrl.actualizarAula);
+router.delete('/aulas/:id',         authenticate, authorize(COORD), ctrl.eliminarAula);
 
-/**
- * POST /api/edificios
- * Registra un nuevo edificio.
- * Acceso: solo COORDINADOR
- * Body: { nombre: string, direccion: string }
- */
-router.post(
-  '/edificios',
-  authenticate,
-  authorize(['COORDINADOR']),
-  ctrl.crearEdificio
-);
-
-/**
- * GET /api/edificios/:id/aulas
- * Lista las aulas de un edificio.
- * Acceso: COORDINADOR, ADMINISTRATIVO
- */
-router.get(
-  '/edificios/:id/aulas',
-  authenticate,
-  authorize(['COORDINADOR', 'ADMINISTRATIVO']),
-  ctrl.listarAulasPorEdificio
-);
-
-// ─────────────────────────────────────────────────────────────
-// AULAS — montado bajo /api (ver app.js)
-// ─────────────────────────────────────────────────────────────
-
-/**
- * POST /api/aulas
- * Registra un aula nueva.
- * Acceso: solo COORDINADOR
- * Body: { numero: string, capacidad: number, tipo: string, edificio_id: number }
- */
-router.post(
-  '/aulas',
-  authenticate,
-  authorize(['COORDINADOR']),
-  ctrl.crearAula
-);
-
-/**
- * PATCH /api/aulas/:id
- * Actualiza parcialmente un aula.
- * Acceso: solo COORDINADOR
- * Body (todos opcionales): { numero?, capacidad?, tipo? }
- */
-router.patch(
-  '/aulas/:id',
-  authenticate,
-  authorize(['COORDINADOR']),
-  ctrl.actualizarAula
-);
+// Ruta de detalle por edificio (mantener compatibilidad)
+router.get('/edificios/:id/aulas',  authenticate, authorize(AMBOS), ctrl.listarAulasPorEdificio);
 
 module.exports = router;

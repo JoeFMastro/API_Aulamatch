@@ -96,26 +96,47 @@ export const api = {
   resetDb: () => request('/health/reset-db', { method: 'POST' }),
 
   // ─────────────────────────────────────────────────────────
-  // ADMINISTRACIÓN (Catálogos)
+  // ADMINISTRACIÓN — CRUD completo por entidad
   // ─────────────────────────────────────────────────────────
-  getEdificios: () => request('/edificios').catch(() => []),
-  crearEdificio: (data) => request('/edificios', { method: 'POST', body: JSON.stringify(data) }),
-  
-  getAulas: () => request('/aulas').catch(() => []),
-  crearAula: (data) => request('/aulas', { method: 'POST', body: JSON.stringify(data) }),
+  getUAs: () => request('/unidades-academicas'),
 
+  // Edificios
+  getEdificios: () => request('/edificios'),
+  crearEdificio: (data) => request('/edificios', { method: 'POST', body: JSON.stringify(data) }),
+  editarEdificio: (id, data) => request(`/edificios/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  eliminarEdificio: (id) => request(`/edificios/${id}`, { method: 'DELETE' }),
+
+  // Aulas
+  getAulas: () => request('/aulas'),
+  crearAula: (data) => request('/aulas', { method: 'POST', body: JSON.stringify(data) }),
+  editarAula: (id, data) => request(`/aulas/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  eliminarAula: (id) => request(`/aulas/${id}`, { method: 'DELETE' }),
+
+  // Carreras
+  getCarreras: () => request('/carreras'),
+  crearCarrera: (data) => request('/carreras', { method: 'POST', body: JSON.stringify(data) }),
+  editarCarrera: (id, data) => request(`/carreras/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  eliminarCarrera: (id) => request(`/carreras/${id}`, { method: 'DELETE' }),
+
+  // Materias
+  getMaterias: () => request('/materias'),
+  crearMateria: (data) => request('/materias', { method: 'POST', body: JSON.stringify(data) }),
+  editarMateria: (id, data) => request(`/materias/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  eliminarMateria: (id) => request(`/materias/${id}`, { method: 'DELETE' }),
+
+  // Docentes
+  getDocentes: () => request('/docentes'),
+  crearDocente: (data) => request('/docentes', { method: 'POST', body: JSON.stringify(data) }),
+  editarDocente: (id, data) => request(`/docentes/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  eliminarDocente: (id) => request(`/docentes/${id}`, { method: 'DELETE' }),
+
+  // Comisiones
   getComisiones: (params = {}) => {
     const qs = new URLSearchParams(params).toString()
-    return request(`/comisiones${qs ? `?${qs}` : ''}`).catch(() => [])
+    return request(`/comisiones${qs ? `?${qs}` : ''}`)
   },
   crearComision: (data) => request('/comisiones', { method: 'POST', body: JSON.stringify(data) }),
-
-  getMaterias: () => request('/materias').catch(() => []),
-  crearMateria: (data) => request('/materias', { method: 'POST', body: JSON.stringify(data) }),
-
-  getCarreras: () => request('/carreras').catch(() => []),
-  crearCarrera: (data) => request('/carreras', { method: 'POST', body: JSON.stringify(data) }),
-
-  getDocentes: () => request('/docentes').catch(() => []),
-  crearDocente: (data) => request('/docentes', { method: 'POST', body: JSON.stringify(data) }),
+  editarComision: (id, data) => request(`/comisiones/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  eliminarComision: (id) => request(`/comisiones/${id}`, { method: 'DELETE' }),
 }
+

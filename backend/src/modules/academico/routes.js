@@ -1,24 +1,5 @@
 'use strict';
 
-/**
- * academico/routes.js
- *
- * Endpoints:
- *   GET  /api/unidades-academicas  → listar UAs               [COORDINADOR, ADMINISTRATIVO]
- *   GET  /api/carreras             → listar carreras (filtro UA) [COORDINADOR, ADMINISTRATIVO]
- *   GET  /api/materias             → listar materias (filtro UA, carrera) [COORDINADOR, ADMINISTRATIVO]
- *   GET  /api/comisiones           → listar comisiones del período [COORDINADOR, ADMINISTRATIVO]
- *   POST /api/comisiones           → registrar comisión        [COORDINADOR, ADMINISTRATIVO]
- *   GET  /api/docentes             → listar docentes           [COORDINADOR, ADMINISTRATIVO]
- *
- * Montado en app.js como:
- *   app.use('/api', require('./modules/academico/routes'))
- *
- * Nota sobre POST /api/comisiones:
- *   El prompt especifica "Administrativo" como rol para gestión de excepciones.
- *   Se permite también a COORDINADOR para coherencia con el acceso total del rol.
- */
-
 const { Router }   = require('express');
 const ctrl         = require('./controller');
 const authenticate = require('../../middlewares/authenticate');
@@ -28,107 +9,31 @@ const AMBOS = ['COORDINADOR', 'ADMINISTRATIVO'];
 
 const router = Router();
 
-/**
- * GET /api/unidades-academicas
- * Lista todas las UAs. Ambos roles, sin filtro automático.
- */
-router.get(
-  '/unidades-academicas',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.listarUAs
-);
+// ─── UNIDADES ACADÉMICAS ─────────────────────────────────────────────────
+router.get('/unidades-academicas', authenticate, authorize(AMBOS), ctrl.listarUAs);
 
-/**
- * GET /api/carreras?unidad_academica_id=<id>
- * ADMINISTRATIVO: UA forzada desde JWT.
- * COORDINADOR: filtro opcional por query param.
- */
-router.get(
-  '/carreras',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.listarCarreras
-);
+// ─── CARRERAS ────────────────────────────────────────────────────────────
+router.get('/carreras',          authenticate, authorize(AMBOS), ctrl.listarCarreras);
+router.post('/carreras',         authenticate, authorize(AMBOS), ctrl.crearCarrera);
+router.patch('/carreras/:id',    authenticate, authorize(AMBOS), ctrl.actualizarCarrera);
+router.delete('/carreras/:id',   authenticate, authorize(AMBOS), ctrl.eliminarCarrera);
 
-/**
- * GET /api/materias?unidad_academica_id=<id>&carrera_id=<id>
- * ADMINISTRATIVO: UA forzada desde JWT.
- * Respuesta incluye array de carreras asociadas (M:N).
- */
-router.get(
-  '/materias',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.listarMaterias
-);
+// ─── MATERIAS ────────────────────────────────────────────────────────────
+router.get('/materias',          authenticate, authorize(AMBOS), ctrl.listarMaterias);
+router.post('/materias',         authenticate, authorize(AMBOS), ctrl.crearMateria);
+router.patch('/materias/:id',    authenticate, authorize(AMBOS), ctrl.actualizarMateria);
+router.delete('/materias/:id',   authenticate, authorize(AMBOS), ctrl.eliminarMateria);
 
-/**
- * GET /api/comisiones?anio=&cuatrimestre=&unidad_academica_id=&materia_id=&modalidad=&turno=
- * ADMINISTRATIVO: unidad_academica_id siempre sobreescrita por JWT.
- */
-router.get(
-  '/comisiones',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.listarComisiones
-);
+// ─── DOCENTES ────────────────────────────────────────────────────────────
+router.get('/docentes',          authenticate, authorize(AMBOS), ctrl.listarDocentes);
+router.post('/docentes',         authenticate, authorize(AMBOS), ctrl.crearDocente);
+router.patch('/docentes/:id',    authenticate, authorize(AMBOS), ctrl.actualizarDocente);
+router.delete('/docentes/:id',   authenticate, authorize(AMBOS), ctrl.eliminarDocente);
 
-/**
- * POST /api/comisiones
- * Registra una comisión nueva.
- * Acceso: COORDINADOR y ADMINISTRATIVO.
- * Body: { codigo, cupo, modalidad, turno, cuatrimestre, anio, materia_id, docente_id }
- */
-router.post(
-  '/comisiones',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.crearComision
-);
-
-/**
- * GET /api/docentes
- * Lista todos los docentes. Sin filtro por UA.
- */
-router.get(
-  '/docentes',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.listarDocentes
-);
-
-/**
- * POST /api/carreras
- * Registra una carrera nueva.
- */
-router.post(
-  '/carreras',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.crearCarrera
-);
-
-/**
- * POST /api/materias
- * Registra una materia nueva.
- */
-router.post(
-  '/materias',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.crearMateria
-);
-
-/**
- * POST /api/docentes
- * Registra un docente nuevo.
- */
-router.post(
-  '/docentes',
-  authenticate,
-  authorize(AMBOS),
-  ctrl.crearDocente
-);
+// ─── COMISIONES ──────────────────────────────────────────────────────────
+router.get('/comisiones',        authenticate, authorize(AMBOS), ctrl.listarComisiones);
+router.post('/comisiones',       authenticate, authorize(AMBOS), ctrl.crearComision);
+router.patch('/comisiones/:id',  authenticate, authorize(AMBOS), ctrl.actualizarComision);
+router.delete('/comisiones/:id', authenticate, authorize(AMBOS), ctrl.eliminarComision);
 
 module.exports = router;
