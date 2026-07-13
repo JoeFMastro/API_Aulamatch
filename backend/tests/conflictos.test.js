@@ -191,4 +191,36 @@ describe('Módulo de Conflictos y Resolución', () => {
     expect(notifs.length).toBeGreaterThan(0);
     expect(notifs.every(n => n.atendida === true)).toBe(true);
   });
+
+  it('GET /api/conflictos: devuelve los conflictos detectados con los datos cruzados correctos (incluyendo horario de la banda)', async () => {
+    // Generar un conflicto de superposición horaria para forzar el JOIN con banda_horaria
+    const com4Id = fixtures.comisiones.com4.id; // Jueves 08:00 - 12:00
+    const com5Id = fixtures.comisiones.com5.id; // Jueves 09:00 - 13:00
+    const aulaId = fixtures.aulas.aulaA1.id;
+
+    // Forzar el estado de CONFLICTO insertando las asignaciones
+    await query(
+      "INSERT INTO asignacion (estado, es_manual, comision_id, aula_id) VALUES ('CONFLICTO', true, $1, $2)",
+      [com4Id, aulaId]
+    );
+    await query(
+      "INSERT INTO asignacion (estado, es_manual, comision_id, aula_id) VALUES ('CONFLICTO', true, $1, $2)",
+      [com5Id, aulaId]
+    );
+
+    // Ejecutar el endpoint a probar
+    const response = await request(app)
+      .get('/api/conflictos')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBeGreaterThanOrEqual(2);
+
+    const asigConflicto = response.body.find(a => a.comision_id === com4Id || a.comision_id === com5Id);
+    expect(asigConflicto).toBeDefined();
+    expect(asigConflicto.horario).toBeDefined();
+    expect(typeof asigConflicto.horario).toBe('string');
+    // Para com4 o com5, la banda es Jueves. Las 2 primeras letras extraídas por LEFT() son 'JU'
+    expect(asigConflicto.horario).toContain('JU ');
+  });
 });

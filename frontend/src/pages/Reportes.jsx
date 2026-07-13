@@ -226,6 +226,21 @@ export default function Reportes() {
       {/* Reporte de disponibilidad */}
       {!loading && tabActiva === 'disponibilidad' && dataDisp && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          <div className="alert alert-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', lineHeight: '1.5' }}>
+            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>ℹ️</span> ¿Cómo leer esta tabla?
+            </div>
+            <ul style={{ paddingLeft: '24px', margin: 0, fontSize: '14px' }}>
+              <li><strong>% Ocupación:</strong> Porcentaje de tiempo que el aula está asignada (basado en una semana operativa de 84 horas).</li>
+              <li><strong>Bloques libres:</strong> Cantidad de franjas horarias disponibles sin asignar para el período seleccionado.</li>
+              <li><strong>Bloques ocupados:</strong> Cantidad de franjas horarias que ya tienen asignada una comisión.</li>
+            </ul>
+            <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>
+              <em>Nota: El cálculo se basa en las bandas horarias cargadas en cada comisión.</em>
+            </div>
+          </div>
+
           {edificiosDisp.length === 0 ? (
             <EmptyState
               icon="🏫"
