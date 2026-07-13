@@ -21,6 +21,7 @@ export default function Reportes() {
   const [dataAsig, setDataAsig] = useState(null)
   const [dataDisp, setDataDisp] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [csvLoading, setCsvLoading] = useState(false)
   const [error, setError] = useState('')
 
   async function cargarAsignaciones() {
@@ -51,12 +52,22 @@ export default function Reportes() {
     }
   }
 
-  function descargarCSV() {
-    const url = api.getReporteCSVUrl(anio, cuatrimestre)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `aulamatch-asignaciones-${anio}-q${cuatrimestre}.csv`
-    a.click()
+  async function descargarCSV() {
+    setCsvLoading(true)
+    setError('')
+    try {
+      const blob = await api.descargarCSVAutenticado(anio, cuatrimestre)
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = `aulamatch-asignaciones-${anio}-q${cuatrimestre}.csv`
+      a.click()
+      URL.revokeObjectURL(objectUrl)
+    } catch (err) {
+      setError(`Error al descargar CSV: ${err.message}`)
+    } finally {
+      setCsvLoading(false)
+    }
   }
 
   // Normalizar disponibilidad: puede llegar como objeto de edificios o array
@@ -134,9 +145,10 @@ export default function Reportes() {
             id="btn-descargar-csv"
             className="btn btn-secondary"
             onClick={descargarCSV}
+            disabled={loading || csvLoading}
             title="Descarga el reporte de asignaciones en formato CSV compatible con Excel"
           >
-            ⬇️ Descargar CSV
+            {csvLoading ? '⏳ Generando...' : '⬇️ Descargar CSV'}
           </button>
         </div>
       </div>

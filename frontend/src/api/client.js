@@ -91,8 +91,27 @@ export const api = {
     const qs = new URLSearchParams({ anio, cuatrimestre, ...(dia ? { dia } : {}) }).toString()
     return request(`/reportes/disponibilidad?${qs}`)
   },
-  getReporteCSVUrl: (anio, cuatrimestre) =>
-    `${BASE_URL}/api/reportes/asignaciones?anio=${anio}&cuatrimestre=${cuatrimestre}&formato=csv`,
+  descargarCSVAutenticado: async (anio, cuatrimestre) => {
+    const token = getToken()
+    const url = `${BASE_URL}/api/reportes/asignaciones?anio=${anio}&cuatrimestre=${cuatrimestre}&formato=csv`
+    const res = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+    if (res.status === 401) {
+      localStorage.removeItem('aulamatch_token')
+      localStorage.removeItem('aulamatch_user')
+      window.location.href = '/login'
+      throw new Error('No autenticado')
+    }
+    if (!res.ok) {
+      let errMsg = `Error ${res.status}`
+      try { const body = await res.json(); errMsg = body.message || body.error || errMsg } catch { /* ignore */ }
+      throw new Error(errMsg)
+    }
+    return res.blob()
+  },
 
   // Health
   health: () => request('/health'),
