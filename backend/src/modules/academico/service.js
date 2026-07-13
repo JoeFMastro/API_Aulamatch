@@ -258,7 +258,12 @@ async function listarComisiones({ unidadAcademicaId, materiaId, anio, cuatrimest
     `SELECT co.id, co.codigo, co.cupo, co.inscriptos, co.modalidad, co.turno,
             co.cuatrimestre, co.anio, co.materia_id, co.docente_id,
             m.nombre AS materia_nombre,
-            d.nombre || ' ' || d.apellido AS docente_nombre
+            d.nombre || ' ' || d.apellido AS docente_nombre,
+            (
+                SELECT json_agg(json_build_object('dia', bh.dia, 'hora_inicio', bh.hora_inicio, 'hora_fin', bh.hora_fin, 'tipo_clase', bh.tipo_clase))
+                FROM banda_horaria bh
+                WHERE bh.comision_id = co.id
+            ) AS bandas_horarias
        FROM comision co
        JOIN materia m ON m.id = co.materia_id
        JOIN docente d ON d.id = co.docente_id
@@ -269,7 +274,7 @@ async function listarComisiones({ unidadAcademicaId, materiaId, anio, cuatrimest
   return rows;
 }
 
-async function crearComision({ codigo, cupo, modalidad, turno, cuatrimestre, anio, materia_id, docente_id }) {
+async function crearComision({ codigo, cupo, modalidad, turno, cuatrimestre, anio, materia_id, docente_id, bandas = [] }) {
   const reqs = { codigo, cupo, modalidad, turno, cuatrimestre, anio, materia_id, docente_id };
   for (const [k, v] of Object.entries(reqs)) {
     if (v === undefined || v === null || v === '') {
@@ -282,18 +287,60 @@ async function crearComision({ codigo, cupo, modalidad, turno, cuatrimestre, ani
   const cuatriNum = Number(cuatrimestre); if (cuatriNum !== 1 && cuatriNum !== 2) { const e = new Error('"cuatrimestre" debe ser 1 o 2'); e.status = 400; throw e; }
   const anioNum = Number(anio); if (!Number.isInteger(anioNum) || anioNum < 2000 || anioNum > 2100) { const e = new Error('"anio" debe ser un año entre 2000 y 2100'); e.status = 400; throw e; }
 
-  const { rows } = await db.query(
-    `INSERT INTO comision (codigo, cupo, modalidad, turno, cuatrimestre, anio, materia_id, docente_id)
-     VALUES ($1,$2,$3::modalidad,$4::turno,$5,$6,$7,$8)
-     RETURNING id, codigo, cupo, inscriptos, modalidad, turno, cuatrimestre, anio, materia_id, docente_id`,
-    [codigo.trim(), cupoNum, modalidad, turno, cuatriNum, anioNum, Number(materia_id), Number(docente_id)]
-  );
-  return rows[0];
+  if (!Array.isArray(bandas)) { const e = new Error('"bandas" debe ser un arreglo'); e.status = 400; throw e; }
+  for (const b of bandas) {
+    if (!b.dia || !b.hora_inicio || !b.hora_fin || !b.tipo_clase) {
+      const e = new Error('Cada banda debe tener dia, hora_inicio, hora_fin y tipo_clase'); e.status = 400; throw e;
+    }
+    if (b.hora_fin <= b.hora_inicio) {
+      const e = new Error('hora_fin debe ser posterior a hora_inicio en la banda horaria'); e.status = 400; throw e;
+    }
+  }
+
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `INSERT INTO comision (codigo, cupo, modalidad, turno, cuatrimestre, anio, materia_id, docente_id)
+       VALUES ($1,$2,$3::modalidad,$4::turno,$5,$6,$7,$8)
+       RETURNING id, codigo, cupo, inscriptos, modalidad, turno, cuatrimestre, anio, materia_id, docente_id`,
+      [codigo.trim(), cupoNum, modalidad, turno, cuatriNum, anioNum, Number(materia_id), Number(docente_id)]
+    );
+    const comision = rows[0];
+
+    for (const b of bandas) {
+      await client.query(
+        `INSERT INTO banda_horaria (dia, hora_inicio, hora_fin, tipo_clase, comision_id)
+         VALUES ($1::dia_semana, $2, $3, $4::tipo_clase, $5)`,
+        [b.dia, b.hora_inicio, b.hora_fin, b.tipo_clase, comision.id]
+      );
+    }
+    await client.query('COMMIT');
+    return comision;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 async function actualizarComision(id, campos) {
   const { rows: ex } = await db.query('SELECT id FROM comision WHERE id=$1', [id]);
   if (ex.length === 0) { const e = new Error(`Comisión ${id} no encontrada`); e.status = 404; throw e; }
+  
+  if (campos.bandas !== undefined) {
+    if (!Array.isArray(campos.bandas)) { const e = new Error('"bandas" debe ser un arreglo'); e.status = 400; throw e; }
+    for (const b of campos.bandas) {
+      if (!b.dia || !b.hora_inicio || !b.hora_fin || !b.tipo_clase) {
+        const e = new Error('Cada banda debe tener dia, hora_inicio, hora_fin y tipo_clase'); e.status = 400; throw e;
+      }
+      if (b.hora_fin <= b.hora_inicio) {
+        const e = new Error('hora_fin debe ser posterior a hora_inicio en la banda horaria'); e.status = 400; throw e;
+      }
+    }
+  }
+
   const sets = []; const vals = []; let i = 1;
   if (campos.codigo !== undefined) { if (!campos.codigo?.trim()) { const e = new Error('"codigo" no puede estar vacío'); e.status = 400; throw e; } sets.push(`codigo=$${i++}`); vals.push(campos.codigo.trim()); }
   if (campos.cupo !== undefined) { const cupoNum = Number(campos.cupo); if (!Number.isInteger(cupoNum) || cupoNum <= 0) { const e = new Error('"cupo" debe ser entero >0'); e.status = 400; throw e; } sets.push(`cupo=$${i++}`); vals.push(cupoNum); }
@@ -303,10 +350,38 @@ async function actualizarComision(id, campos) {
   if (campos.anio !== undefined) { sets.push(`anio=$${i++}`); vals.push(Number(campos.anio)); }
   if (campos.materia_id !== undefined) { sets.push(`materia_id=$${i++}`); vals.push(Number(campos.materia_id)); }
   if (campos.docente_id !== undefined) { sets.push(`docente_id=$${i++}`); vals.push(Number(campos.docente_id)); }
-  if (sets.length === 0) { const e = new Error('Sin campos a actualizar'); e.status = 400; throw e; }
-  vals.push(id);
-  const { rows } = await db.query(`UPDATE comision SET ${sets.join(',')} WHERE id=$${i} RETURNING id, codigo, cupo, inscriptos, modalidad, turno, cuatrimestre, anio, materia_id, docente_id`, vals);
-  return rows[0];
+  
+  if (sets.length === 0 && campos.bandas === undefined) { const e = new Error('Sin campos a actualizar'); e.status = 400; throw e; }
+
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    let comision = ex[0];
+    
+    if (sets.length > 0) {
+      vals.push(id);
+      const { rows } = await client.query(`UPDATE comision SET ${sets.join(',')} WHERE id=$${i} RETURNING id, codigo, cupo, inscriptos, modalidad, turno, cuatrimestre, anio, materia_id, docente_id`, vals);
+      comision = rows[0];
+    }
+    
+    if (campos.bandas !== undefined) {
+      await client.query('DELETE FROM banda_horaria WHERE comision_id=$1', [id]);
+      for (const b of campos.bandas) {
+        await client.query(
+          `INSERT INTO banda_horaria (dia, hora_inicio, hora_fin, tipo_clase, comision_id)
+           VALUES ($1::dia_semana, $2, $3, $4::tipo_clase, $5)`,
+          [b.dia, b.hora_inicio, b.hora_fin, b.tipo_clase, id]
+        );
+      }
+    }
+    await client.query('COMMIT');
+    return comision;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 async function eliminarComision(id) {

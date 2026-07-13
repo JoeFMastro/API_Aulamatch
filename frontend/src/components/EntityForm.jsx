@@ -16,11 +16,13 @@ export function EntityForm({ isOpen, onClose, onSubmit, title, fields, initialDa
         if (initialData && initialData[f.key] !== undefined) {
           if (f.type === 'multiselect' && Array.isArray(initialData[f.key])) {
             init[f.key] = initialData[f.key].map(item => String(item.id ?? item))
+          } else if (f.type === 'time-range-list' && Array.isArray(initialData[f.key])) {
+            init[f.key] = [...initialData[f.key]]
           } else {
             init[f.key] = String(initialData[f.key] ?? '')
           }
         } else {
-          init[f.key] = f.type === 'multiselect' ? [] : (f.defaultValue ?? '')
+          init[f.key] = f.type === 'multiselect' ? [] : (f.type === 'time-range-list' ? [] : (f.defaultValue ?? ''))
         }
       })
       setForm(init)
@@ -35,12 +37,28 @@ export function EntityForm({ isOpen, onClose, onSubmit, title, fields, initialDa
     const errs = {}
     fields.forEach(f => {
       const val = form[f.key]
-      if (f.required) {
+      if (f.required && f.type !== 'time-range-list') {
         const isEmpty = f.type === 'multiselect' ? !val?.length : !String(val ?? '').trim()
         if (isEmpty) errs[f.key] = `${f.label} es obligatorio`
       }
       if (f.type === 'number' && val !== '' && (isNaN(Number(val)) || (f.min !== undefined && Number(val) < f.min))) {
         errs[f.key] = f.min !== undefined ? `Debe ser un número >= ${f.min}` : 'Debe ser un número'
+      }
+      if (f.type === 'time-range-list') {
+        if (f.required && (!val || val.length === 0)) {
+          errs[f.key] = `${f.label} requiere al menos una banda horaria`
+        } else if (val && val.length > 0) {
+          for (let i = 0; i < val.length; i++) {
+            const row = val[i]
+            if (!row.dia || !row.hora_inicio || !row.hora_fin || !row.tipo_clase) {
+              errs[f.key] = 'Todas las filas deben tener día, horas y tipo completos'
+              break
+            } else if (row.hora_fin <= row.hora_inicio) {
+              errs[f.key] = 'La hora de fin debe ser posterior a la de inicio'
+              break
+            }
+          }
+        }
       }
     })
     return errs
@@ -58,6 +76,8 @@ export function EntityForm({ isOpen, onClose, onSubmit, title, fields, initialDa
           payload[f.key] = Number(form[f.key])
         } else if (f.type === 'multiselect') {
           payload[f.key] = (form[f.key] || []).map(Number)
+        } else if (f.type === 'time-range-list') {
+          payload[f.key] = form[f.key] || []
         } else {
           const val = form[f.key]
           // Campos opcionales vacíos: omitirlos del payload en lugar de enviar undefined
@@ -145,6 +165,41 @@ export function EntityForm({ isOpen, onClose, onSubmit, title, fields, initialDa
                       )
                     })}
                     {!(f.options || []).length && <p className="td-muted" style={{ padding: '4px' }}>Sin opciones disponibles</p>}
+                  </div>
+
+                ) : f.type === 'time-range-list' ? (
+                  <div style={{ border: '1px solid var(--color-border)', padding: '8px', borderRadius: '4px', borderColor: fieldErrors[f.key] ? 'var(--badge-red-text)' : 'var(--color-border)' }}>
+                    {(form[f.key] || []).map((row, i) => (
+                      <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                        <select className="form-select" style={{flex: 1, padding: '4px'}} value={row.dia} onChange={e => {
+                          const n = [...(form[f.key]||[])]; n[i].dia = e.target.value; setField(f.key, n);
+                        }}>
+                          <option value="">Día</option>
+                          {['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'].map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                        <input type="time" className="form-input" style={{flex: 1, padding: '4px'}} value={row.hora_inicio} onChange={e => {
+                          const n = [...(form[f.key]||[])]; n[i].hora_inicio = e.target.value; setField(f.key, n);
+                        }} />
+                        <span className="td-muted">-</span>
+                        <input type="time" className="form-input" style={{flex: 1, padding: '4px'}} value={row.hora_fin} onChange={e => {
+                          const n = [...(form[f.key]||[])]; n[i].hora_fin = e.target.value; setField(f.key, n);
+                        }} />
+                        <select className="form-select" style={{flex: 1, padding: '4px'}} value={row.tipo_clase} onChange={e => {
+                          const n = [...(form[f.key]||[])]; n[i].tipo_clase = e.target.value; setField(f.key, n);
+                        }}>
+                          <option value="">Tipo</option>
+                          <option value="TEORICA">Teórica</option>
+                          <option value="PRACTICA">Práctica</option>
+                          <option value="TEORICO_PRACTICA">T.Práctica</option>
+                        </select>
+                        <button type="button" className="btn btn-ghost" style={{padding: '0 8px', color: 'var(--badge-red-text)'}} onClick={() => {
+                          const n = [...(form[f.key]||[])]; n.splice(i, 1); setField(f.key, n);
+                        }}>✕</button>
+                      </div>
+                    ))}
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => {
+                      const n = [...(form[f.key]||[])]; n.push({dia: '', hora_inicio: '', hora_fin: '', tipo_clase: ''}); setField(f.key, n);
+                    }}>+ Agregar banda horaria</button>
                   </div>
 
                 ) : (

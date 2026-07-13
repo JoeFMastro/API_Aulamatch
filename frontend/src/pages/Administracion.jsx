@@ -251,6 +251,10 @@ function useAdminConfig() {
         { key: 'docente_nombre', label: 'Docente' },
         { key: 'cupo', label: 'Cupo' },
         { key: 'turno', label: 'Turno', render: (val) => val === 'MANANA' ? 'Mañana' : val === 'TARDE' ? 'Tarde' : val === 'NOCHE' ? 'Noche' : val },
+        { key: 'bandas_horarias', label: 'Horario', render: (val) => {
+            if (!val || val.length === 0) return <span className="td-muted">—</span>;
+            return val.map(b => `${b.dia?.slice(0, 2)} ${b.hora_inicio?.slice(0, 5)}–${b.hora_fin?.slice(0, 5)}`).join(', ');
+        }},
         { key: 'modalidad', label: 'Modalidad' },
         { key: 'anio', label: 'Año' },
         { key: 'cuatrimestre', label: 'Cuatri' },
@@ -266,10 +270,11 @@ function useAdminConfig() {
           options: materias.map(m => ({ value: String(m.id), label: `${m.codigo} — ${m.nombre}` })) },
         { key: 'docente_id', label: 'Docente', type: 'select', required: true,
           options: docentes.map(d => ({ value: String(d.id), label: `${d.apellido}, ${d.nombre}` })) },
+        { key: 'bandas_horarias', label: 'Bandas Horarias', type: 'time-range-list', required: false },
       ],
       getter: api.getComisiones,
-      creator: api.crearComision,
-      updater: api.editarComision,
+      creator: (p) => api.crearComision({...p, bandas: p.bandas_horarias}),
+      updater: (id, p) => api.editarComision(id, {...p, bandas: p.bandas_horarias}),
       deleter: api.eliminarComision,
       formTitle: 'Comisión',
       emptyMsg: 'No hay comisiones registradas',

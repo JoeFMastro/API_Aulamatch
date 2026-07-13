@@ -181,7 +181,12 @@ async function _queryAsignaciones(whereClause, params) {
             FROM carrera_materia cm
             JOIN carrera c ON c.id = cm.carrera_id
             WHERE cm.materia_id = m.id
-        ) AS carrera_nombre
+        ) AS carrera_nombre,
+        (
+            SELECT json_agg(json_build_object('dia', bh.dia, 'hora_inicio', bh.hora_inicio, 'hora_fin', bh.hora_fin, 'tipo_clase', bh.tipo_clase))
+            FROM banda_horaria bh
+            WHERE bh.comision_id = co.id
+        ) AS bandas_horarias
      FROM asignacion a
      JOIN comision          co ON co.id  = a.comision_id
      LEFT JOIN docente      d  ON d.id   = co.docente_id
