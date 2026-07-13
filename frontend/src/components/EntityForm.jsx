@@ -54,15 +54,27 @@ export function EntityForm({ isOpen, onClose, onSubmit, title, fields, initialDa
     try {
       const payload = {}
       fields.forEach(f => {
-        if (f.type === 'number') payload[f.key] = Number(form[f.key])
-        else if (f.type === 'multiselect') payload[f.key] = (form[f.key] || []).map(Number)
-        else payload[f.key] = form[f.key] === '' ? undefined : form[f.key]
+        if (f.type === 'number') {
+          payload[f.key] = Number(form[f.key])
+        } else if (f.type === 'multiselect') {
+          payload[f.key] = (form[f.key] || []).map(Number)
+        } else {
+          const val = form[f.key]
+          // Campos opcionales vacíos: omitirlos del payload en lugar de enviar undefined
+          // Campos requeridos: siempre incluirlos (el backend genera el error descriptivo)
+          if (val === '' && !f.required) {
+            // Omitir — no incluir la clave en el payload
+          } else {
+            payload[f.key] = val === '' ? null : val
+          }
+        }
       })
       await onSubmit(payload)
     } finally {
       setSaving(false)
     }
   }
+
 
   const setField = (key, val) => {
     setForm(prev => ({ ...prev, [key]: val }))
