@@ -375,7 +375,12 @@ function AsignacionRow({ a, onDelete, deleting, onReload }) {
         <span className="td-muted"> / {a.cupo ?? comision.cupo}</span>
       </td>
       <td className="td-muted">{a.modalidad ?? comision.modalidad}</td>
-      <td className="td-muted">{a.turno ?? comision.turno}</td>
+      <td className="td-muted">
+        {(a.turno ?? comision.turno) === 'MANANA' ? 'Mañana' : 
+         (a.turno ?? comision.turno) === 'TARDE' ? 'Tarde' : 
+         (a.turno ?? comision.turno) === 'NOCHE' ? 'Noche' : 
+         (a.turno ?? comision.turno)}
+      </td>
       <td>
         {editMode ? (
           <div className="flex items-center gap-8">

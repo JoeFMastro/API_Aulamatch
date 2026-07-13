@@ -250,7 +250,7 @@ function useAdminConfig() {
         { key: 'materia_nombre', label: 'Materia' },
         { key: 'docente_nombre', label: 'Docente' },
         { key: 'cupo', label: 'Cupo' },
-        { key: 'turno', label: 'Turno' },
+        { key: 'turno', label: 'Turno', render: (val) => val === 'MANANA' ? 'Mañana' : val === 'TARDE' ? 'Tarde' : val === 'NOCHE' ? 'Noche' : val },
         { key: 'modalidad', label: 'Modalidad' },
         { key: 'anio', label: 'Año' },
         { key: 'cuatrimestre', label: 'Cuatri' },
@@ -279,7 +279,7 @@ function useAdminConfig() {
         { key: 'id', label: 'ID' },
         { key: 'comision_codigo', label: 'Comisión' },
         { key: 'aula_numero', label: 'Aula' },
-        { key: 'turno', label: 'Turno' },
+        { key: 'turno', label: 'Turno', render: (val) => val === 'MANANA' ? 'Mañana' : val === 'TARDE' ? 'Tarde' : val === 'NOCHE' ? 'Noche' : val },
         { key: 'estado', label: 'Estado', render: (val) => {
             let cls = 'badge-neutral'
             if (val === 'ASIGNADA') cls = 'badge-success'
