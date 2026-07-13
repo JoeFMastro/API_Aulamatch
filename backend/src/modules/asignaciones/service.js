@@ -402,7 +402,7 @@ async function ejecutarAsignacionAutomatica(anio, cuatrimestre) {
         AND NOT EXISTS (
           SELECT 1 FROM asignacion a
            WHERE a.comision_id = co.id
-             AND a.estado = 'ASIGNADA'
+             AND a.estado IN ('ASIGNADA', 'CONFLICTO')
         )
       ORDER BY co.inscriptos DESC -- Paso 2: mayor cupo primero`,
     [anioNum, cuatriNum]

@@ -387,19 +387,10 @@ describe('Suite de Auditoría — Asignación Manual, Aulas Compatibles y Horari
   // BLOQUE 5: Auto-asignación — casos de borde
   // ──────────────────────────────────────────────────────────────────────
   describe('POST /api/asignaciones/automatica — casos de borde', () => {
-    it('[BUG CONOCIDO] Motor automático NO debería retomar comisiones en CONFLICTO, pero actualmente sí lo hace', async () => {
-      // HALLAZGO DE AUDITORÍA: El motor automático (ejecutarAsignacionAutomatica) filtra
-      // comisiones que ya tienen asignación en estado ASIGNADA (NOT EXISTS con estado='ASIGNADA'),
-      // pero NO filtra las que tienen estado CONFLICTO.
-      //
-      // Resultado: una comisión en CONFLICTO es retomada por el motor y puede recibir
-      // una segunda asignación nueva en estado ASIGNADA, dejando las dos activas en paralelo.
-      //
-      // Severidad: BUG REAL — viola el diseño documentado en docs/decisiones-diseno.md sección 4.
-      // Estado: pendiente de corrección en tarea separada.
-      //
-      // Este test documenta el comportamiento actual (bug activo), no el comportamiento esperado.
-
+    it('Motor automático no debe retomar comisiones en CONFLICTO', async () => {
+      // El motor automático filtra comisiones que ya tienen asignación 
+      // en estado ASIGNADA o CONFLICTO para dejarlas a cargo de resolución manual.
+      
       // Insertar C6 con estado CONFLICTO
       await query(
         "INSERT INTO asignacion (estado, es_manual, comision_id, aula_id) VALUES ('CONFLICTO', true, $1, $2)",
@@ -413,14 +404,9 @@ describe('Suite de Auditoría — Asignación Manual, Aulas Compatibles y Horari
 
       expect(res.status).toBe(200);
 
-      // BUG ACTIVO: el motor SÍ asigna C6 de nuevo (no debería).
-      // Documentamos el comportamiento actual — el test pasa afirmando el bug.
+      // Comportamiento esperado: el motor no asigna la comisión que está en CONFLICTO.
       const nuevaC6 = res.body.asignadas?.find(a => a.comision_codigo === 'C6_CUPO_EXC');
-      // Cuando el bug esté corregido, cambiar la siguiente línea a:
-      //   expect(nuevaC6).toBeUndefined();
-      console.warn('[HALLAZGO] BUG: El motor automático reasignó C6_CUPO_EXC que estaba en CONFLICTO:', nuevaC6);
-      // Por ahora solo verificamos que la respuesta no falla (sin imponer la expectativa correcta)
-      expect(res.status).toBe(200);
+      expect(nuevaC6).toBeUndefined();
     });
 
 
