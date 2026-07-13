@@ -122,7 +122,7 @@ async function crearMateria({ nombre, codigo, unidad_academica_id, carrera_ids =
   if (!codigo?.trim()) { const e = new Error('"codigo" es obligatorio'); e.status = 400; throw e; }
   if (!unidad_academica_id) { const e = new Error('"unidad_academica_id" es obligatorio'); e.status = 400; throw e; }
 
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
@@ -150,7 +150,7 @@ async function actualizarMateria(id, { nombre, codigo, unidad_academica_id, carr
   const { rows: ex } = await db.query('SELECT id FROM materia WHERE id=$1', [id]);
   if (ex.length === 0) { const e = new Error(`Materia ${id} no encontrada`); e.status = 404; throw e; }
 
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     const sets = []; const vals = []; let i = 1;
