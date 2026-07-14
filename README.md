@@ -16,7 +16,7 @@ AulaMatch resuelve un problema concreto de las universidades: asignar aulas a co
 
 El sistema permite a un **Coordinador** ejecutar una asignación automática masiva al inicio de cada cuatrimestre, gestionar manualmente los casos especiales, detectar y resolver conflictos de solapamiento en tiempo real, y exportar reportes de ocupación en formato JSON o CSV.
 
-Fue desarrollado como proyecto final de la materia **Herramientas de IA aplicadas al Diseño** (UNSAM, 2026), utilizando asistencia de IA de forma documentada y trazable a lo largo de todo el proceso de construcción.
+Fue desarrollado como proyecto final de la materia **Inteligencia Artificial** (UTN FRBA, 2026), utilizando asistencia de IA de forma documentada y trazable a lo largo de todo el proceso de construcción.
 
 ---
 
@@ -318,8 +318,6 @@ Time:        ~4s
 ## Autor y contexto académico
 
 **Joel Mastroiaco**
-Materia: *Herramientas de IA aplicadas al Diseño*
-Institución: Universidad Nacional de San Martín (UNSAM)
-Año: 2026
+
 
 El proyecto fue desarrollado de forma incremental con asistencia de IA documentada. Cada decisión técnica relevante y desviación del diseño original está registrada en [`docs/decisiones-diseno.md`](docs/decisiones-diseno.md) y en el [`CHANGELOG.md`](CHANGELOG.md), respetando el principio de trazabilidad exigido por la materia.
