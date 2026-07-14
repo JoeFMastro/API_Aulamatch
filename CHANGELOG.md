@@ -8,6 +8,22 @@ Versiones semánticas informales: `vX.Y` donde X = bloque funcional, Y = iteraci
 
 ---
 
+## [v1.13.0] — 2026-07-13 · Entrega final, fixes de lógica y limpieza de repositorio
+
+### Corregido
+- **Backend (Asignaciones)**: Resuelto bug crítico donde la asignación manual devolvía un error HTTP 409 al intentar asignar una comisión que excedía la capacidad del aula. Ahora se permite la creación y la asignación queda correctamente en estado `CONFLICTO`, activando las notificaciones y flujos correspondientes.
+- **Backend (Motor Automático)**: El algoritmo automático ahora excluye explícitamente a las comisiones que ya poseen una asignación en estado `CONFLICTO` o `ASIGNADA`, delegando la resolución de las primeras al Coordinador de manera manual.
+- **Tests**: Se reactivaron y endurecieron las aserciones en `asignacion_manual.test.js` correspondientes al motor automático y cupo excedido. La suite completa suma 49 tests 100% aprobados (cero regresiones, cero advertencias silenciadas).
+
+### Modificado
+- **Documentación y Repositorio**: 
+  - `README.md` actualizado confirmando el estado "Deploy Efectivo Completo" (Frontend y Backend desplegados en Render).
+  - Eliminado el archivo `vision-futura.md` por estar fuera del alcance (documentación sobre alumnos/asistente que no aplica al MVP).
+  - Limpieza de datos académicos en archivos raíz.
+  - Creada la carpeta `entrega/` para agrupar exclusivamente los documentos académicos finales (PDF) a presentar.
+
+---
+
 ## [v1.12.8] — 2026-07-10 · Fix: botón de asignación automática no respondía correctamente
 
 ### Corregido
