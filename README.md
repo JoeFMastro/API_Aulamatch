@@ -45,8 +45,7 @@ Fue desarrollado como proyecto final de la materia **Herramientas de IA aplicada
 | **conflictos** | Detección automática de superposición horaria y cupo excedido. Notificaciones persistidas en tabla propia. Métricas para panel de control. Resolución manual con re-verificación automática. | ✅ Completo |
 | **reportes** | Exportación de asignaciones por período en JSON y CSV (compatible con Excel, con BOM UTF-8). Reporte de disponibilidad de aulas por edificio y franja horaria con cálculo de ocupación porcentual. | ✅ Completo |
 | **Tests** | Suite de integración (Jest + Supertest) contra PostgreSQL real: 23 tests cubriendo auth, asignaciones, conflictos y reportes. | ✅ 23 pasando |
-| **Deploy en Render** | Infraestructura y scripts listos (Dockerfile prod, script de migración). El despliegue efectivo es el próximo paso. | 🔲 Pendiente |
-| **Integración de IA interna** | Sugerida como extensión futura por el evaluador académico. Fuera del alcance del MVP. | 🔭 Visión futura |
+| **Deploy en Render** | Backend y base de datos desplegados correctamente en Render con conexión segura. Frontend conectado a la API productiva. | ✅ Completo |
 
 ---
 
@@ -76,32 +75,32 @@ Para las decisiones de diseño relevantes y las desviaciones justificadas respec
 API_Aulamatch/
 ├── backend/
 │   ├── src/
-│   │   ├── config/          # Pool de conexiones a PostgreSQL y validación de env vars al inicio
+│   │   ├── config/          # Pool de conexiones a PostgreSQL y validación de env vars
 │   │   ├── middlewares/     # authenticate (JWT), authorize (roles), errorHandler (global)
-│   │   └── modules/
-│   │       ├── auth/        # Login, logout, /me
-│   │       ├── aulas/       # CRUD de edificios y aulas
-│   │       ├── academico/   # UAs, carreras, materias, docentes, comisiones
-│   │       ├── asignaciones/# Motor automático + CRUD manual + aulas compatibles
-│   │       ├── conflictos/  # Detección, notificaciones, métricas, resolución
-│   │       └── reportes/    # Exportación JSON/CSV, disponibilidad de aulas
-│   ├── sql/                 # Scripts de migración para deploy externo (npm run migrate)
+│   │   └── modules/         # auth, aulas, academico, asignaciones, conflictos, reportes
+│   ├── sql/                 # Scripts de migración para deploy externo
 │   ├── tests/               # Suites de integración (Jest + Supertest)
-│   ├── Dockerfile           # Multi-stage: target dev (nodemon) y prod (node)
+│   ├── Dockerfile           # Multi-stage: target dev y prod
+│   └── package.json
+├── frontend/
+│   ├── src/                 # Componentes genéricos, layouts, hooks y servicios API
+│   ├── public/              # Assets estáticos
+│   ├── vite.config.js       # Configuración del empaquetador
 │   └── package.json
 ├── deploy/
 │   ├── docker-compose.yml   # Servicios locales: db (postgres:16) + backend con hot-reload
-│   └── init-db/             # Scripts SQL de inicialización: 01_schema, 02_usuarios, 03_notificaciones
+│   └── init-db/             # Scripts SQL de inicialización
 ├── docs/
-│   ├── diseño-original.md         # Modelo de dominio, diagrama de clases, especificación de endpoints
+│   ├── diseño-original.md         # Modelo de dominio, diagrama de clases, endpoints
 │   ├── decisiones-diseno.md       # Desviaciones justificadas respecto al diseño original
 │   ├── guia-desarrollo-local.md   # Guía detallada de setup local
 │   ├── guia-deploy-render.md      # Guía paso a paso para deploy en Render
-│   ├── guia-evaluacion.md         # Guía interactiva para el evaluador (Swagger UI)
-│   ├── guia-frontend.md           # Arquitectura y setup del frontend React
-│   ├── vision-futura.md           # Extensión IA propuesta por el evaluador
-│   └── Actividad4_Joel_Mastroiaco_Completo.pdf  # Documento académico completo (diseño + decisiones)
-├── CHANGELOG.md             # Historial de versiones con decisiones técnicas por iteración
+│   └── guia-frontend.md           # Arquitectura y setup del frontend React
+├── entrega/
+│   ├── Actividad4_Joel_Mastroiaco_Completo.pdf  # Documento académico completo
+│   ├── entrega_final_Joel_Mastroiaco.pdf        # Documento final de entrega
+│   └── README.md
+├── CHANGELOG.md             # Historial de versiones con decisiones técnicas
 ├── .env.example             # Plantilla de variables de entorno (copiar a .env)
 └── README.md
 ```
@@ -214,7 +213,8 @@ Time:        ~4s
 | `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Opcional* | Variables individuales de conexión (fallback si no hay `DATABASE_URL`). | — |
 | `JWT_SECRET` | ✅ Requerida | Clave secreta para firmar los JWT. Mínimo 32 caracteres. | `una_clave_larga_y_aleatoria` |
 | `JWT_EXPIRES_IN` | Opcional | Vigencia del token JWT. | `8h` |
-| `ALLOWED_ORIGINS` | Opcional | Orígenes permitidos por CORS (separados por coma). Si no se define, se permite `*` con advertencia en consola. | `http://localhost:3000` |
+| `ALLOWED_ORIGINS` | Opcional | Orígenes permitidos por CORS (separados por coma). | `http://localhost:3000` |
+| `VITE_API_URL` | ✅ Req (Front) | URL de la API del backend para el frontend React. | `https://aulamatch-backend.onrender.com` |
 
 > \* Se requiere `DATABASE_URL` **o** el conjunto completo de variables individuales (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`). El sistema valida esto al arrancar y lanza un error descriptivo si falta alguna variable crítica.
 
@@ -291,11 +291,9 @@ Time:        ~4s
 | [`docs/decisiones-diseno.md`](docs/decisiones-diseno.md) | Desviaciones justificadas respecto al modelo original (permisos de roles, representación visual de estados, mecanismo de notificaciones). |
 | [`docs/guia-desarrollo-local.md`](docs/guia-desarrollo-local.md) | Guía extendida de setup local con casos de borde (puertos ocupados, troubleshooting). |
 | [`docs/guia-deploy-render.md`](docs/guia-deploy-render.md) | Instrucciones paso a paso para desplegar en Render (PostgreSQL + Web Service). |
-| [`docs/guia-evaluacion.md`](docs/guia-evaluacion.md) | Guía interactiva para el evaluador: cómo autenticarse y recorrer todos los flujos desde Swagger UI. |
 | [`docs/guia-frontend.md`](docs/guia-frontend.md) | Arquitectura del frontend React: pantallas implementadas, paleta de colores, estructura del proyecto. |
-| [`docs/vision-futura.md`](docs/vision-futura.md) | Extensión IA propuesta por el evaluador: arquitectura MCP + agente LLM sobre la API REST existente. |
-| [`CHANGELOG.md`](CHANGELOG.md) | Historial completo de versiones (v1.0 → v1.6) con decisiones técnicas registradas por iteración. |
-| [`docs/Actividad4_Joel_Mastroiaco_Completo.pdf`](docs/Actividad4_Joel_Mastroiaco_Completo.pdf) | Documento académico completo: diseño, wireframes, pseudocódigo, trazabilidad y justificaciones. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Historial completo de versiones con decisiones técnicas registradas por iteración. |
+| [`entrega/`](entrega/) | Carpeta con los documentos académicos finales en formato PDF. |
 
 ---
 
@@ -312,8 +310,8 @@ Time:        ~4s
 | Módulo `reportes` (JSON + CSV, disponibilidad) | ✅ Completo |
 | Suite de tests de integración (23 tests) | ✅ Completo |
 | Infraestructura de deploy (Dockerfile prod, script de migración) | ✅ Lista |
-| **Deploy efectivo en Render** | 🔲 Pendiente (próximo paso) |
-| Integración de IA interna en el motor de asignación | 🔭 Visión futura |
+| **Deploy efectivo en Render** (Backend y DB) | ✅ Completo |
+| **Deploy del Frontend** conectado a la API de producción | ✅ Completo |
 
 ---
 
